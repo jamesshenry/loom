@@ -1,3 +1,4 @@
+using Loom.Config;
 using Loom.Modules;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,8 +13,7 @@ public static class Extensions
             var dir = new DirectoryInfo(startPath ?? Directory.GetCurrentDirectory());
             while (dir != null)
             {
-                // Identify the root by looking for the .git folder OR your solution file
-                if (dir.GetDirectories(".git").Any() || dir.GetFiles("*.slnx").Any())
+                if (dir.GetDirectories(".git").Length != 0 || dir.GetFiles("*.slnx").Length != 0)
                 {
                     return dir.FullName;
                 }
@@ -21,7 +21,7 @@ public static class Extensions
             }
 
             // Fallback if we somehow can't find it
-            return startPath;
+            return startPath ?? Directory.GetCurrentDirectory();
         }
     }
     extension(IServiceCollection services)

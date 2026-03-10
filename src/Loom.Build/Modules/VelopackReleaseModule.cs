@@ -1,3 +1,5 @@
+using Loom.Config;
+
 namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
@@ -27,6 +29,10 @@ public class VelopackReleaseModule(BuildContext buildContext) : Module<CommandRe
 
         ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
         ArgumentException.ThrowIfNullOrWhiteSpace(buildContext.Rid, nameof(buildContext.Rid));
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            buildContext.Project.VelopackId,
+            nameof(buildContext.Project.VelopackId)
+        );
 
         var root = context.Environment.WorkingDirectory;
         var publishDir = Path.Combine(root, "dist", "publish", buildContext.Rid);

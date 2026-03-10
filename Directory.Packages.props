@@ -8,6 +8,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
+    <PackageVersion Include="MinVer" Version="7.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
     <PackageVersion Include="ModularPipelines" Version="3.1.90" />
     <PackageVersion Include="ModularPipelines.DotNet" Version="3.1.90" />
     <PackageVersion Include="ModularPipelines.Git" Version="3.1.90" />

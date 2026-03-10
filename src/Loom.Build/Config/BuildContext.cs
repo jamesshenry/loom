@@ -1,21 +1,23 @@
-namespace Loom;
+namespace Loom.Config;
 
 public class BuildSettings
 {
-    public ProjectConfig Project { get; set; } = default!;
-    public BuildConfig Build { get; set; } = default!;
-    public NugetConfig Nuget { get; set; } = default!;
-}
-
-public class NugetConfig
-{
-    public string? ApiKey { get; set; }
+    public ProjectConfig Project { get; set; } = null!;
+    public BuildConfig Build { get; set; } = null!;
+    public NugetConfig? Nuget { get; set; } = null!;
 }
 
 public class BuildContext
 {
     public BuildContext(BuildSettings settings)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(settings.Project);
+        ArgumentNullException.ThrowIfNull(settings.Build);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(settings.Project.Solution, nameof(settings));
+        ArgumentException.ThrowIfNullOrWhiteSpace(settings.Project.EntryProject, nameof(settings));
+
         Project = settings.Project;
         Rid = settings.Build.Rid ?? Win64;
         Quick = settings.Build.Quick ?? false;
@@ -23,7 +25,7 @@ public class BuildContext
         SkipPkg = settings.Build.SkipPackaging ?? false;
         SkipDlv = settings.Build.SkipDelivery ?? false;
         Target = settings.Build.Target ?? BuildTarget.Build;
-        NugetApiKey = settings.Nuget.ApiKey;
+        NugetApiKey = settings.Nuget?.ApiKey;
         Configuration =
             (Quick || settings.Build.Target is BuildTarget.Publish or BuildTarget.Release)
                 ? "Release"

@@ -1,5 +1,6 @@
 using ConsoleAppFramework;
 using Loom;
+using Loom.Config;
 using ModularPipelines;
 #pragma warning disable ConsoleUse // Use of Console detected
 

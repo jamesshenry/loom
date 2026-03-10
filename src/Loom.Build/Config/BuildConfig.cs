@@ -1,5 +1,4 @@
-// File: .build\GlobalOptions.cs
-namespace Loom;
+namespace Loom.Config;
 
 public class BuildConfig
 {

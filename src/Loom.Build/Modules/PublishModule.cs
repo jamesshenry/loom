@@ -1,3 +1,5 @@
+using Loom.Config;
+
 namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
