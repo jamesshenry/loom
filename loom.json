@@ -1,0 +1,13 @@
+{
+    "Project": {
+        "Solution": "Typical.slnx",
+        "EntryProject": "src/Typical.csproj",
+        "VelopackId": "Typical"
+    },
+    "Build": {
+        "Rid": "win-x64"
+    },
+    "Nuget": {
+        "ApiKey": "abcdefg"
+    }
+}

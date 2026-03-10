@@ -25,5 +25,7 @@
     <PackageReference Include="ModularPipelines" />
     <PackageReference Include="ModularPipelines.DotNet" />
     <PackageReference Include="ModularPipelines.Git" />
+    <PackageReference Include="NJsonSchema" />
+    <PackageReference Include="NJsonSchema.NewtonsoftJson" />
   </ItemGroup>
 </Project>

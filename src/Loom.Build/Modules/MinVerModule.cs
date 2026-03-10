@@ -8,11 +8,10 @@ public class MinVerModule : Module<string>
         CancellationToken ct
     )
     {
-        bool useDnx = true;
-        var options = new MinverOptions(useDnx);
+        var options = new MinverOptions();
         context.Logger.LogDebug("Minver Options:\n {Options}", options);
         var result = await context.Shell.Command.ExecuteCommandLineTool(
-            options: new MinverOptions(useDnx) { },
+            options: options,
             executionOptions: new CommandExecutionOptions { ThrowOnNonZeroExitCode = true },
             cancellationToken: ct
         );

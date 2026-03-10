@@ -2,8 +2,8 @@
   "profiles": {
     "targets2": {
       "commandName": "Project",
-      "commandLineArgs": "--rid win-x64 --target nugetUpload",
-      "workingDirectory": "$(ProjectDir)",
+      "commandLineArgs": "init",
+      "workingDirectory": "C:/source/personal/typical",
     }
   }
 }
