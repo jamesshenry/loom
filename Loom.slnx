@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Loom.Build/Loom.Build.csproj" />
+  </Folder>
+</Solution>
