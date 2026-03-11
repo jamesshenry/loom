@@ -4,8 +4,10 @@ namespace Loom.Modules;
 
 [ModuleCategory("Delivery")]
 [DependsOn<PackModule>]
-public class NuGetUploadModule(BuildContext buildContext) : Module<CommandResult[]>
+public class NuGetUploadModule(LoomContext buildContext) : Module<CommandResult[]>
 {
+    public bool IsDryRun { get; set; } = false;
+
     protected override async Task<CommandResult[]?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
@@ -63,7 +65,7 @@ public class NuGetUploadModule(BuildContext buildContext) : Module<CommandResult
 
 [ModuleCategory("Packaging")]
 [DependsOn<BuildModule>] // Pack usually depends on Build
-public class PackModule(BuildContext buildContext) : Module<CommandResult>
+public class PackModule(LoomContext buildContext) : Module<CommandResult>
 {
     protected override async Task<CommandResult?> ExecuteAsync(
         IModuleContext context,

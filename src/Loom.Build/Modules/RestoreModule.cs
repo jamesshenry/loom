@@ -4,7 +4,7 @@ namespace Loom.Modules;
 
 [ModuleCategory("Preparation")]
 [DependsOn<CleanModule>]
-public class RestoreModule(BuildContext buildContext, IConfiguration configuration)
+public class RestoreModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {
     private readonly IConfiguration _configuration = configuration;

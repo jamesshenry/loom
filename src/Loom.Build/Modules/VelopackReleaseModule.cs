@@ -5,7 +5,7 @@ namespace Loom.Modules;
 [ModuleCategory("Packaging")]
 [DependsOn<PublishModule>]
 [DependsOn<MinVerModule>]
-public class VelopackReleaseModule(BuildContext buildContext) : Module<CommandResult>
+public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult>
 {
     protected override ModuleConfiguration Configure()
     {
@@ -49,7 +49,7 @@ public class VelopackReleaseModule(BuildContext buildContext) : Module<CommandRe
         };
 
         context.Logger.LogInformation(
-            "Packaging {Id} v{Version} for {Rid} using directive {Directive}",
+            "Packaging {Id} {Version} for {Rid} using directive {Directive}",
             buildContext.Project.VelopackId,
             version,
             buildContext.Rid,
@@ -57,7 +57,7 @@ public class VelopackReleaseModule(BuildContext buildContext) : Module<CommandRe
         );
 
         return await context.Shell.Command.ExecuteCommandLineTool(
-            new VelopackOptions(rid: buildContext.Rid, useDnx: false)
+            new VelopackOptions
             {
                 Arguments =
                 [

@@ -62,9 +62,9 @@ public class Commands
             .AddInMemoryCollection(cliOptions.ToInMemoryCollection())
             .AddEnvironmentVariables()
             .Build();
-        var settings = new LoomContext();
+        var settings = new LoomSettings();
         config.Bind(settings);
-        var context = new BuildContext(settings);
+        var context = new LoomContext(settings);
 
         var builder = Pipeline.CreateBuilder();
         builder.Configuration.AddConfiguration(config);
@@ -126,7 +126,7 @@ public class Commands
             );
 
         // Build the Loom Context
-        var loom = new LoomContext
+        var loom = new LoomSettings
         {
             Project = new ProjectConfig
             {
@@ -140,7 +140,7 @@ public class Commands
 
         var settings = new NewtonsoftJsonSchemaGeneratorSettings() { };
         settings.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-        var schema = JsonSchema.FromType<LoomContext>(settings);
+        var schema = JsonSchema.FromType<LoomSettings>(settings);
 
         schema.Properties["$schema"] = new JsonSchemaProperty
         {
@@ -151,7 +151,7 @@ public class Commands
         var schemaJson = schema.ToJson(Newtonsoft.Json.Formatting.Indented);
         await File.WriteAllTextAsync("loom.schema.json", schemaJson);
 
-        var jsonContent = JsonSerializer.Serialize(loom, LoomContextContext.Default.LoomContext);
+        var jsonContent = JsonSerializer.Serialize(loom, LoomSettingsContext.Default.LoomSettings);
 
         var finalJson = $$"""
 {

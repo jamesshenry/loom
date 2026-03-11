@@ -20,13 +20,12 @@ public static class Extensions
                 dir = dir.Parent;
             }
 
-            // Fallback if we somehow can't find it
             return startPath ?? Directory.GetCurrentDirectory();
         }
     }
     extension(IServiceCollection services)
     {
-        internal IServiceCollection AddServices(BuildContext context)
+        internal IServiceCollection AddServices(LoomContext context)
         {
             services.AddSingleton(context);
 
@@ -48,11 +47,11 @@ public static class Extensions
                     services.AddModule<CleanModule>();
                     break;
                 case BuildTarget.Build:
-                default:
                     services.AddModule<BuildModule>();
                     break;
+                default:
+                    throw new InvalidOperationException($"Unhandled enum value: {context.Target}");
             }
-
             return services;
         }
     }

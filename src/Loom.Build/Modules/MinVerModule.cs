@@ -8,7 +8,7 @@ public class MinVerModule : Module<string>
         CancellationToken ct
     )
     {
-        var options = new MinverOptions();
+        var options = new MinverOptions() { };
         context.Logger.LogDebug("Minver Options:\n {Options}", options);
         var result = await context.Shell.Command.ExecuteCommandLineTool(
             options: options,

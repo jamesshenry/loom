@@ -4,7 +4,7 @@ namespace Loom.Modules;
 
 [DependsOn<RestoreModule>]
 [DependsOn<MinVerModule>]
-public class BuildModule(BuildContext buildContext, IConfiguration configuration)
+public class BuildModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {
     private readonly IConfiguration _configuration = configuration;

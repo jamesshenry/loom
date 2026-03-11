@@ -3,7 +3,7 @@ using Loom.Config;
 namespace Loom.Modules;
 
 [DependsOn<BuildModule>]
-public class TestModule(BuildContext buildContext, IConfiguration configuration)
+public class TestModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {
     private readonly IConfiguration _configuration = configuration;

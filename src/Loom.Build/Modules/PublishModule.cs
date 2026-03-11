@@ -4,7 +4,7 @@ namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
 [DependsOn<RestoreModule>]
-public class PublishModule(BuildContext buildContext, IConfiguration configuration)
+public class PublishModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {
     private readonly IConfiguration _configuration = configuration;

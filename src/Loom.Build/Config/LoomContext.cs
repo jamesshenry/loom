@@ -1,27 +1,8 @@
-using System.Text.Json.Serialization;
-
 namespace Loom.Config;
-
-[JsonSourceGenerationOptions(
-    WriteIndented = true,
-    AllowTrailingCommas = true,
-    UseStringEnumConverter = true,
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    PropertyNameCaseInsensitive = true
-)]
-[JsonSerializable(typeof(LoomContext))]
-public partial class LoomContextContext : JsonSerializerContext;
 
 public class LoomContext
 {
-    public ProjectConfig Project { get; set; } = null!;
-    public BuildConfig Build { get; set; } = null!;
-    public NugetConfig? Nuget { get; set; } = null!;
-}
-
-public class BuildContext
-{
-    public BuildContext(LoomContext settings)
+    public LoomContext(LoomSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(settings.Project);
