@@ -10,4 +10,8 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="TUnit" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Loom.Build\Loom.Build.csproj" />
+  </ItemGroup>
 </Project>

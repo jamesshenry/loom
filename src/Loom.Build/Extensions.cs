@@ -41,7 +41,7 @@ public static class Extensions
                     services.AddModule<TestModule>();
                     break;
                 case BuildTarget.NugetUpload:
-                    services.AddModule<NuGetUploadModule>();
+                    services.AddModule<NugetUploadModule>();
                     break;
                 case BuildTarget.Clean:
                     services.AddModule<CleanModule>();
@@ -55,6 +55,7 @@ public static class Extensions
             return services;
         }
     }
+
     extension(IConfiguration config)
     {
         public ProjectConfig BindProjectMetadata()

@@ -1,46 +1,40 @@
 using Loom.Config;
+using File = ModularPipelines.FileSystem.File;
 
 namespace Loom.Modules;
 
 [ModuleCategory("Delivery")]
 [DependsOn<PackModule>]
-public class NuGetUploadModule(LoomContext buildContext) : Module<CommandResult[]>
+public class NugetUploadModule(LoomContext loomContext, IEnumerable<File>? overridePackages = null)
+    : Module<CommandResult[]>
 {
-    public bool IsDryRun { get; set; } = false;
+    public bool IsDryRun { get; set; }
 
     protected override async Task<CommandResult[]?> ExecuteAsync(
         IModuleContext context,
-        CancellationToken ct
+        CancellationToken cancellationToken
     )
     {
-        var nupkgs = context.Files.Glob("dist/**.nupkg");
-        if (!nupkgs.Any())
+        var packages = overridePackages;
+
+        if (packages == null)
         {
-            context.Logger.LogWarning("No NuGet packages found to upload.");
-            return null;
+            var packModule = await context.GetModule<PackModule>();
+            packages = packModule.ValueOrDefault;
         }
+        packages ??= [];
 
         var results = new List<CommandResult>();
-        var apiKey = buildContext.NugetApiKey;
-        var count = 0;
-
-        foreach (var package in nupkgs)
+        foreach (var package in packages)
         {
-            count++;
-
-            context.Logger.LogInformation(
-                "Preparing to push package: {Package} {count}/{totalCount}",
-                package.Name,
-                count,
-                nupkgs.Count()
-            );
-
+            var apiKey = loomContext.NugetApiKey;
             if (string.IsNullOrEmpty(apiKey))
             {
-                context.Logger.LogWarning(
-                    "Skipping NuGet push for {Package} (No API Key found).",
-                    package.Name
-                );
+                continue;
+            }
+
+            if (IsDryRun)
+            {
                 continue;
             }
 
@@ -49,45 +43,16 @@ public class NuGetUploadModule(LoomContext buildContext) : Module<CommandResult[
                 .Nuget.Push(
                     new DotNetNugetPushOptions
                     {
-                        Path = package,
+                        Path = package.Path,
                         Source = "https://api.nuget.org/v3/index.json",
                         ApiKey = apiKey,
                     },
-                    cancellationToken: ct
+                    cancellationToken: cancellationToken
                 );
 
             results.Add(result);
         }
 
         return [.. results];
-    }
-}
-
-[ModuleCategory("Packaging")]
-[DependsOn<BuildModule>] // Pack usually depends on Build
-public class PackModule(LoomContext buildContext) : Module<CommandResult>
-{
-    protected override async Task<CommandResult?> ExecuteAsync(
-        IModuleContext context,
-        CancellationToken ct
-    )
-    {
-        var outputDir = Path.Combine(context.Environment.WorkingDirectory, "dist");
-
-        context.Logger.LogInformation("Packing {Project}", buildContext.Project.EntryProject);
-
-        return await context
-            .DotNet()
-            .Pack(
-                new DotNetPackOptions
-                {
-                    ProjectSolution = buildContext.Project.EntryProject,
-                    Configuration = buildContext.Configuration,
-                    Output = outputDir,
-                    NoBuild = true, // We already built in BuildModule
-                    IncludeSymbols = true,
-                },
-                cancellationToken: ct
-            );
     }
 }
