@@ -1,5 +1,6 @@
 using Loom.Config;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ModularPipelines;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
@@ -7,6 +8,7 @@ using ModularPipelines.Extensions;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
+using ModularPipelines.Options;
 using Moq;
 
 namespace Loom.Build.Tests;
@@ -37,6 +39,13 @@ public class CleanModuleTests
         };
         builder.Services.AddSingleton(new LoomContext(settings));
         builder.Services.AddModule<CleanModuleWrapper>();
+        builder.Services.AddLogging(b => b.ClearProviders());
+        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Default;
+        builder.Options.ShowProgressInConsole = false;
+        builder.Options.PrintResults = false;
+        builder.Options.PrintLogo = false;
+        builder.Options.PrintDependencyChains = false;
+        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
         return builder;
     }
 

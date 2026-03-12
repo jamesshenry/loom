@@ -3,6 +3,7 @@ using Loom.Config;
 using Loom.Modules;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ModularPipelines;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
@@ -27,7 +28,13 @@ public class RestoreModuleTests
     {
         _mockDotNet = new Mock<IDotNet>();
         _mockDotNet
-            .Setup(x => x.Restore(It.IsAny<DotNetRestoreOptions>(), It.IsAny<CommandExecutionOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.Restore(
+                    It.IsAny<DotNetRestoreOptions>(),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((CommandResult)null!);
 
         var settings = new LoomSettings
@@ -47,6 +54,13 @@ public class RestoreModuleTests
         builder.Services.AddSingleton(new Mock<IFileSystemProvider>().Object);
         builder.Services.AddSingleton(Mock.Of<IConfiguration>());
         builder.Services.AddModule(_ => new RestoreModuleWrapper(context));
+        builder.Services.AddLogging(b => b.ClearProviders());
+        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Default;
+        builder.Options.ShowProgressInConsole = false;
+        builder.Options.PrintResults = false;
+        builder.Options.PrintLogo = false;
+        builder.Options.PrintDependencyChains = false;
+        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
         return builder;
     }
 
@@ -57,11 +71,12 @@ public class RestoreModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Restore(
-                It.Is<DotNetRestoreOptions>(o => o.ProjectSolution == "test.sln"),
-                It.IsAny<CommandExecutionOptions>(),
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Restore(
+                    It.Is<DotNetRestoreOptions>(o => o.ProjectSolution == "test.sln"),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -80,11 +95,12 @@ public class RestoreModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Restore(
-                It.Is<DotNetRestoreOptions>(o => o.Runtime == "linux-x64"),
-                It.IsAny<CommandExecutionOptions>(),
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Restore(
+                    It.Is<DotNetRestoreOptions>(o => o.Runtime == "linux-x64"),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -96,11 +112,12 @@ public class RestoreModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Restore(
-                It.IsAny<DotNetRestoreOptions>(),
-                It.Is<CommandExecutionOptions>(o => o.ThrowOnNonZeroExitCode == true),
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Restore(
+                    It.IsAny<DotNetRestoreOptions>(),
+                    It.Is<CommandExecutionOptions>(o => o.ThrowOnNonZeroExitCode == true),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -109,10 +126,16 @@ public class RestoreModuleTests
 [ModuleCategory("Test")]
 public class RestoreModuleWrapper(LoomContext ctx) : Module<CommandResult>
 {
-    protected override async Task<CommandResult?> ExecuteAsync(IModuleContext context, CancellationToken ct)
+    protected override async Task<CommandResult?> ExecuteAsync(
+        IModuleContext context,
+        CancellationToken ct
+    )
     {
         var realModule = new RestoreModule(ctx, Mock.Of<IConfiguration>());
-        var method = typeof(RestoreModule).GetMethod("ExecuteAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        var method = typeof(RestoreModule).GetMethod(
+            "ExecuteAsync",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
         return await (Task<CommandResult?>)method!.Invoke(realModule, [context, ct])!;
     }
 }

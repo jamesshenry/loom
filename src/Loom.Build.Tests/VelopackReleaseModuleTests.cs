@@ -1,6 +1,7 @@
 using Loom.Config;
 using Loom.Modules;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ModularPipelines;
 using ModularPipelines.Attributes;
 using ModularPipelines.Configuration;
@@ -44,6 +45,13 @@ public class VelopackReleaseModuleTests
         builder.Services.AddSingleton(new Mock<IFileSystemProvider>().Object);
         builder.Services.AddSingleton(new VelopackVersion(version));
         builder.Services.AddModule<VelopackReleaseModuleWrapper>();
+        builder.Services.AddLogging(b => b.ClearProviders());
+        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Default;
+        builder.Options.ShowProgressInConsole = false;
+        builder.Options.PrintResults = false;
+        builder.Options.PrintLogo = false;
+        builder.Options.PrintDependencyChains = false;
+        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
         return builder;
     }
 
@@ -70,7 +78,7 @@ public class VelopackReleaseModuleTests
         var pipeline = await BuildPipeline(ctx: ctx).BuildAsync();
         var summary = await pipeline.RunAsync();
 
-        var module = pipeline.Services.GetRequiredService<VelopackReleaseModuleWrapper>();
+        var module = summary.GetModule<VelopackReleaseModuleWrapper>();
         var result = await module;
         await Assert.That(result.ModuleStatus).IsEqualTo(Status.Skipped);
     }

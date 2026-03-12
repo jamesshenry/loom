@@ -2,6 +2,7 @@ using System.Reflection;
 using Loom.Config;
 using Loom.Modules;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ModularPipelines;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
@@ -9,6 +10,7 @@ using ModularPipelines.Enums;
 using ModularPipelines.Extensions;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Modules;
+using ModularPipelines.Options;
 using Moq;
 using File = ModularPipelines.FileSystem.File;
 
@@ -36,6 +38,13 @@ public class PackModuleTests
         builder.Services.AddSingleton(context);
         builder.Services.AddSingleton(new Mock<IFileSystemProvider>().Object);
         builder.Services.AddModule<PackModuleWrapper>();
+        builder.Services.AddLogging(b => b.ClearProviders());
+        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Default;
+        builder.Options.ShowProgressInConsole = false;
+        builder.Options.PrintResults = false;
+        builder.Options.PrintLogo = false;
+        builder.Options.PrintDependencyChains = false;
+        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
         return builder;
     }
 
