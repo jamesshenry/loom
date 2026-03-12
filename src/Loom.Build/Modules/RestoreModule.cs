@@ -3,7 +3,7 @@ using Loom.Config;
 namespace Loom.Modules;
 
 [ModuleCategory("Preparation")]
-[DependsOn<CleanModule>]
+[DependsOn<RestoreToolsModule>]
 public class RestoreModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {

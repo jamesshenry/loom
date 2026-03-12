@@ -18,6 +18,7 @@ public class LoomContext
         SkipPkg = settings.Build.SkipPackaging ?? false;
         SkipDlv = settings.Build.SkipDelivery ?? false;
         Target = settings.Build.Target ?? BuildTarget.Build;
+        DistDirectory = settings.Build.DistDirectory ?? ".dist";
         NugetApiKey = settings.Nuget?.ApiKey;
         Configuration =
             (Quick || settings.Build.Target is BuildTarget.Publish or BuildTarget.Release)
@@ -34,6 +35,7 @@ public class LoomContext
     public bool SkipPkg { get; }
     public bool SkipDlv { get; }
     public BuildTarget Target { get; }
+    public string DistDirectory { get; }
     public string? NugetApiKey { get; }
 
     public IEnumerable<string> GetIgnoredCategories()

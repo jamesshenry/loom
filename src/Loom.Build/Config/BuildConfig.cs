@@ -8,6 +8,7 @@ public class BuildConfig
     public string? Version { get; set; }
     public BuildTarget? Target { get; set; }
     public bool? Quick { get; set; }
+    public string? DistDirectory { get; set; }
 
     [JsonIgnore]
     public bool? SkipPreparation { get; set; }
@@ -37,6 +38,8 @@ public class BuildConfig
             dict[$"{nameof(LoomSettings.Build)}:SkipPackaging"] = SkipPackaging.Value.ToString();
         if (SkipDelivery.HasValue)
             dict[$"{nameof(LoomSettings.Build)}:SkipDelivery"] = SkipDelivery.Value.ToString();
+        if (DistDirectory != null)
+            dict[$"{nameof(LoomSettings.Build)}:DistDirectory"] = DistDirectory;
 
         return dict;
     }

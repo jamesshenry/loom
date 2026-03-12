@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "LoomSettings",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "project": {
+      "$ref": "#/definitions/ProjectConfig"
+    },
+    "build": {
+      "$ref": "#/definitions/BuildConfig"
+    },
+    "nuget": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/NugetConfig"
+        }
+      ]
+    },
+    "$schema": {
+      "type": "string",
+      "description": "The URL to the JSON schema for this file."
+    }
+  },
+  "definitions": {
+    "ProjectConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "solution": {
+          "type": "string"
+        },
+        "entryProject": {
+          "type": "string"
+        },
+        "velopackId": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "BuildConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rid": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "target": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/BuildTarget"
+            }
+          ]
+        },
+        "quick": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "distDirectory": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "skipPreparation": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "skipPackaging": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "skipDelivery": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "BuildTarget": {
+      "type": "integer",
+      "description": "",
+      "x-enumNames": [
+        "Build",
+        "Test",
+        "Publish",
+        "Restore",
+        "Release",
+        "NugetUpload",
+        "Clean"
+      ],
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "NugetConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiKey": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    }
+  }
+}

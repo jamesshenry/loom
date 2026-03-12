@@ -1,7 +1,9 @@
+using Loom.Config;
+
 namespace Loom.Modules;
 
 [ModuleCategory("Preparation")]
-public class CleanModule : Module<bool>
+public class CleanModule(LoomContext loomContext) : Module<bool>
 {
     protected override async Task<bool> ExecuteAsync(IModuleContext context, CancellationToken ct)
     {
@@ -18,7 +20,7 @@ public class CleanModule : Module<bool>
             await artifacts.DeleteAsync(ct);
         }
         context.Logger.LogInformation("{artifacts} folder deleted.", artifacts);
-        var dist = context.Files.GetFolder(Path.Combine(repoRoot, ".dist"));
+        var dist = context.Files.GetFolder(Path.Combine(repoRoot, loomContext.DistDirectory));
         if (dist.Exists)
         {
             await dist.DeleteAsync(ct);

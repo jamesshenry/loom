@@ -1,13 +1,17 @@
 {
-    "Project": {
-        "Solution": "Typical.slnx",
-        "EntryProject": "src/Typical.csproj",
-        "VelopackId": "Typical"
-    },
-    "Build": {
-        "Rid": "win-x64"
-    },
-    "Nuget": {
-        "ApiKey": "abcdefg"
-    }
+  "$schema": "./loom.schema.json",
+  "project": {
+    "solution": "Loom.slnx",
+    "entryProject": "src/YourProject.csproj",
+    "velopackId": "Loom"
+  },
+  "build": {
+    "rid": "win-x64",
+    "target": null,
+    "quick": null,
+    "distDirectory": "dist"
+  },
+  "nuget": {
+    "apiKey": ""
+  }
 }

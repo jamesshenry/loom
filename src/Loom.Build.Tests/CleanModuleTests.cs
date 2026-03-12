@@ -65,14 +65,14 @@ public class CleanModuleTests
     public async Task ExecuteAsync_WhenArtifactsDirExists_DeletesIt()
     {
         _mockFileSystem
-            .Setup(f => f.DirectoryExists(It.Is<string>(s => s.Contains(".artifacts"))))
+            .Setup(f => f.DirectoryExists(It.Is<string>(s => s.EndsWith(".artifacts"))))
             .Returns(true);
 
         var builder = BuildPipeline();
         await (await builder.BuildAsync()).RunAsync();
 
         _mockFileSystem.Verify(
-            f => f.DeleteDirectory(It.Is<string>(s => s.Contains(".artifacts")), true),
+            f => f.DeleteDirectory(It.Is<string>(s => s.EndsWith(".artifacts")), true),
             Times.Once
         );
     }
@@ -84,7 +84,7 @@ public class CleanModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockFileSystem.Verify(
-            f => f.DeleteDirectory(It.Is<string>(s => s.Contains(".artifacts")), It.IsAny<bool>()),
+            f => f.DeleteDirectory(It.Is<string>(s => s.EndsWith(".artifacts")), It.IsAny<bool>()),
             Times.Never
         );
     }
@@ -93,14 +93,14 @@ public class CleanModuleTests
     public async Task ExecuteAsync_WhenDistDirExists_DeletesIt()
     {
         _mockFileSystem
-            .Setup(f => f.DirectoryExists(It.Is<string>(s => s.Contains(".dist"))))
+            .Setup(f => f.DirectoryExists(It.Is<string>(s => s.EndsWith(".dist"))))
             .Returns(true);
 
         var builder = BuildPipeline();
         await (await builder.BuildAsync()).RunAsync();
 
         _mockFileSystem.Verify(
-            f => f.DeleteDirectory(It.Is<string>(s => s.Contains(".dist")), true),
+            f => f.DeleteDirectory(It.Is<string>(s => s.EndsWith(".dist")), true),
             Times.Once
         );
     }
@@ -112,7 +112,7 @@ public class CleanModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockFileSystem.Verify(
-            f => f.DeleteDirectory(It.Is<string>(s => s.Contains(".dist")), It.IsAny<bool>()),
+            f => f.DeleteDirectory(It.Is<string>(s => s.EndsWith(".dist")), It.IsAny<bool>()),
             Times.Never
         );
     }
@@ -123,7 +123,8 @@ public class CleanModuleTests
 /// which is mockable — unlike Folder.Exists which reads the real file system.
 /// </summary>
 [ModuleCategory("Test")]
-public class CleanModuleWrapper(IFileSystemProvider fileSystem) : Module<bool>
+public class CleanModuleWrapper(IFileSystemProvider fileSystem, LoomContext loomContext)
+    : Module<bool>
 {
     protected override async Task<bool> ExecuteAsync(IModuleContext context, CancellationToken ct)
     {
@@ -135,7 +136,7 @@ public class CleanModuleWrapper(IFileSystemProvider fileSystem) : Module<bool>
             fileSystem.DeleteDirectory(artifactsPath, recursive: true);
         }
 
-        var distPath = Path.Combine(repoRoot, ".dist");
+        var distPath = Path.Combine(repoRoot, loomContext.DistDirectory);
         if (fileSystem.DirectoryExists(distPath))
         {
             fileSystem.DeleteDirectory(distPath, recursive: true);
