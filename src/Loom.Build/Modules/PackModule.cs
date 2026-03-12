@@ -24,7 +24,7 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
         //             ProjectSolution = buildContext.Project.EntryProject,
         //             Configuration = buildContext.Configuration,
         //             Output = outputDir,
-        //             NoBuild = true, // We already built in BuildModule
+        //             NoBuild = true, // We already built `in BuildModule
         //             IncludeSymbols = true,
         //         },
         //         cancellationToken: ct

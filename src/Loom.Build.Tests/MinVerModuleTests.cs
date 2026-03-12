@@ -28,15 +28,13 @@ public class MinVerModuleTests
         _loomContext = new LoomContext(settings);
     }
 
-    private PipelineBuilder BuildPipeline(string? shellOutput, bool throwOnFailure = true)
+    private PipelineBuilder BuildPipeline(string? shellOutput)
     {
         var builder = Pipeline.CreateBuilder();
         builder.Services.AddSingleton(_loomContext);
         builder.Services.AddSingleton(new Mock<IFileSystemProvider>().Object);
         builder.Services.AddSingleton(shellOutput ?? "");
         builder.Services.AddModule<MinVerModuleWrapper>();
-        if (!throwOnFailure)
-            builder.Options.ThrowOnFailure = false;
         return builder;
     }
 
@@ -45,9 +43,9 @@ public class MinVerModuleTests
     {
         var builder = BuildPipeline("2.5.0");
         var pipeline = await builder.BuildAsync();
-        await pipeline.RunAsync();
+        var summary = await pipeline.RunAsync();
 
-        var module = pipeline.Services.GetRequiredService<MinVerModuleWrapper>();
+        var module = summary.GetModule<MinVerModuleWrapper>();
         var result = await module;
         await Assert.That(result.ValueOrDefault).IsEqualTo("2.5.0");
     }
@@ -57,9 +55,9 @@ public class MinVerModuleTests
     {
         var builder = BuildPipeline("  1.0.0-preview.1  \n");
         var pipeline = await builder.BuildAsync();
-        await pipeline.RunAsync();
+        var summary = await pipeline.RunAsync();
 
-        var module = pipeline.Services.GetRequiredService<MinVerModuleWrapper>();
+        var module = summary.GetModule<MinVerModuleWrapper>();
         var result = await module;
         await Assert.That(result.ValueOrDefault).IsEqualTo("1.0.0-preview.1");
     }
@@ -67,21 +65,19 @@ public class MinVerModuleTests
     [Test]
     public async Task ExecuteAsync_Throws_WhenVersionIsEmpty()
     {
-        var builder = BuildPipeline("", throwOnFailure: false);
+        var builder = BuildPipeline("");
         var pipeline = await builder.BuildAsync();
-        var summary = await pipeline.RunAsync();
 
-        await Assert.That(summary.Status).IsNotEqualTo(Status.Successful);
+        await Assert.ThrowsAsync<Exception>(() => pipeline.RunAsync());
     }
 
     [Test]
     public async Task ExecuteAsync_Throws_WhenVersionIsWhitespace()
     {
-        var builder = BuildPipeline("   ", throwOnFailure: false);
+        var builder = BuildPipeline("   ");
         var pipeline = await builder.BuildAsync();
-        var summary = await pipeline.RunAsync();
 
-        await Assert.That(summary.Status).IsNotEqualTo(Status.Successful);
+        await Assert.ThrowsAsync<Exception>(() => pipeline.RunAsync());
     }
 
     [Test]

@@ -72,15 +72,16 @@ public class NugetUploadModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockNuget.Verify(
-            x => x.Push(
-                It.Is<DotNetNugetPushOptions>(o =>
-                    o.Path == _package.Path &&
-                    o.ApiKey == "test-api-key" &&
-                    o.Source == "https://api.nuget.org/v3/index.json"
+            x =>
+                x.Push(
+                    It.Is<DotNetNugetPushOptions>(o =>
+                        o.Path == _package.Path
+                        && o.ApiKey == "test-api-key"
+                        && o.Source == "https://api.nuget.org/v3/index.json"
+                    ),
+                    null,
+                    It.IsAny<CancellationToken>()
                 ),
-                null,
-                It.IsAny<CancellationToken>()
-            ),
             Times.Once
         );
     }
@@ -96,11 +97,19 @@ public class NugetUploadModuleTests
         };
         var loomContextWithoutKey = new LoomContext(settings);
 
-        var builder = BuildPipeline(loomContext: loomContextWithoutKey, packages: new[] { _package });
+        var builder = BuildPipeline(
+            loomContext: loomContextWithoutKey,
+            packages: new[] { _package }
+        );
         await (await builder.BuildAsync()).RunAsync();
 
         _mockNuget.Verify(
-            x => x.Push(It.IsAny<DotNetNugetPushOptions>(), It.IsAny<CommandExecutionOptions>(), It.IsAny<CancellationToken>()),
+            x =>
+                x.Push(
+                    It.IsAny<DotNetNugetPushOptions>(),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
     }
@@ -112,7 +121,12 @@ public class NugetUploadModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockNuget.Verify(
-            x => x.Push(It.IsAny<DotNetNugetPushOptions>(), It.IsAny<CommandExecutionOptions>(), It.IsAny<CancellationToken>()),
+            x =>
+                x.Push(
+                    It.IsAny<DotNetNugetPushOptions>(),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
     }
@@ -124,7 +138,12 @@ public class NugetUploadModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockNuget.Verify(
-            x => x.Push(It.IsAny<DotNetNugetPushOptions>(), It.IsAny<CommandExecutionOptions>(), It.IsAny<CancellationToken>()),
+            x =>
+                x.Push(
+                    It.IsAny<DotNetNugetPushOptions>(),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Never
         );
     }
@@ -145,11 +164,14 @@ public class NugetUploadModuleTests
         foreach (var pkg in packages)
         {
             _mockNuget.Verify(
-                x => x.Push(
-                    It.Is<DotNetNugetPushOptions>(o => o.Path == pkg.Path && o.ApiKey == "test-api-key"),
-                    null,
-                    It.IsAny<CancellationToken>()
-                ),
+                x =>
+                    x.Push(
+                        It.Is<DotNetNugetPushOptions>(o =>
+                            o.Path == pkg.Path && o.ApiKey == "test-api-key"
+                        ),
+                        null,
+                        It.IsAny<CancellationToken>()
+                    ),
                 Times.Once
             );
         }

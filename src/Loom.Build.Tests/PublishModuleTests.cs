@@ -26,7 +26,9 @@ public class PublishModuleTests
     {
         _mockDotNet = new Mock<IDotNet>();
         _mockDotNet
-            .Setup(x => x.Publish(It.IsAny<DotNetPublishOptions>(), null, It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.Publish(It.IsAny<DotNetPublishOptions>(), null, It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync((CommandResult)null!);
 
         var settings = new LoomSettings
@@ -56,11 +58,12 @@ public class PublishModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Publish(
-                It.Is<DotNetPublishOptions>(o => o.ProjectSolution == "app.csproj"),
-                null,
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Publish(
+                    It.Is<DotNetPublishOptions>(o => o.ProjectSolution == "app.csproj"),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -72,11 +75,12 @@ public class PublishModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Publish(
-                It.Is<DotNetPublishOptions>(o => o.Runtime == "win-x64"),
-                null,
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Publish(
+                    It.Is<DotNetPublishOptions>(o => o.Runtime == "win-x64"),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -88,11 +92,12 @@ public class PublishModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Publish(
-                It.Is<DotNetPublishOptions>(o => o.NoRestore == true),
-                null,
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Publish(
+                    It.Is<DotNetPublishOptions>(o => o.NoRestore == true),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -104,11 +109,14 @@ public class PublishModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Publish(
-                It.Is<DotNetPublishOptions>(o => o.Output != null && o.Output.Contains("win-x64")),
-                null,
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Publish(
+                    It.Is<DotNetPublishOptions>(o =>
+                        o.Output != null && o.Output.Contains("win-x64")
+                    ),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -121,7 +129,7 @@ public class PublishModuleTests
             Project = new ProjectConfig { Solution = "test.sln", EntryProject = "app.csproj" },
             Build = new BuildConfig { Target = BuildTarget.Publish, Rid = null },
         };
-        // LoomContext defaults to "win-x64" when Rid is null — 
+        // LoomContext defaults to "win-x64" when Rid is null —
         // so to test the ArgumentException path we need to clear Rid after construction.
         // This tests defensive coding; LoomContext.Rid always has a value, so verify that.
         var ctx = new LoomContext(settings);
@@ -142,11 +150,16 @@ public class PublishModuleTests
         await (await builder.BuildAsync()).RunAsync();
 
         _mockDotNet.Verify(
-            x => x.Publish(
-                It.Is<DotNetPublishOptions>(o => o.Runtime == "linux-x64" && o.Output != null && o.Output.Contains("linux-x64")),
-                null,
-                It.IsAny<CancellationToken>()
-            ),
+            x =>
+                x.Publish(
+                    It.Is<DotNetPublishOptions>(o =>
+                        o.Runtime == "linux-x64"
+                        && o.Output != null
+                        && o.Output.Contains("linux-x64")
+                    ),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -155,10 +168,16 @@ public class PublishModuleTests
 [ModuleCategory("Test")]
 public class PublishModuleWrapper(LoomContext ctx) : Module<CommandResult>
 {
-    protected override async Task<CommandResult?> ExecuteAsync(IModuleContext context, CancellationToken ct)
+    protected override async Task<CommandResult?> ExecuteAsync(
+        IModuleContext context,
+        CancellationToken ct
+    )
     {
         var realModule = new PublishModule(ctx, Mock.Of<IConfiguration>());
-        var method = typeof(PublishModule).GetMethod("ExecuteAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        var method = typeof(PublishModule).GetMethod(
+            "ExecuteAsync",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
         return await (Task<CommandResult?>)method!.Invoke(realModule, [context, ct])!;
     }
 }

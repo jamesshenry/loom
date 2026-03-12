@@ -8,7 +8,6 @@ using ModularPipelines.Context;
 using ModularPipelines.Enums;
 using ModularPipelines.Extensions;
 using ModularPipelines.FileSystem;
-using ModularPipelines.Models;
 using ModularPipelines.Modules;
 using Moq;
 using File = ModularPipelines.FileSystem.File;
@@ -46,9 +45,9 @@ public class PackModuleTests
         // PackModule currently returns an empty list (pack call commented out)
         var builder = BuildPipeline();
         var pipeline = await builder.BuildAsync();
-        await pipeline.RunAsync();
+        var summary = await pipeline.RunAsync();
 
-        var module = pipeline.Services.GetRequiredService<PackModuleWrapper>();
+        var module = summary.GetModule<PackModuleWrapper>();
         var result = await module;
         await Assert.That(result.ValueOrDefault).IsNotNull();
         await Assert.That(result.ValueOrDefault).IsEmpty();
