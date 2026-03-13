@@ -18,17 +18,14 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration)
 
         Directory.CreateDirectory(testResultsDir);
 
-        context.Logger.LogInformation(
-            "Running tests for {Solution}",
-            buildContext.Project.Solution
-        );
+        context.Logger.LogInformation("Running tests for {Solution}", buildContext.Solution);
 
         return await context
             .DotNet()
             .Test(
                 new DotNetTestOptions
                 {
-                    Solution = buildContext.Project.Solution,
+                    Solution = buildContext.Solution,
                     Configuration = buildContext.Configuration,
                     NoBuild = true,
                     Arguments =

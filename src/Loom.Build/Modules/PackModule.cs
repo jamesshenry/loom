@@ -16,7 +16,7 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
     {
         var outputDir = Path.Combine(context.Environment.WorkingDirectory, "dist");
 
-        context.Logger.LogInformation("Packing {Project}", buildContext.Project.EntryProject);
+        context.Logger.LogInformation("Packing {Project}", buildContext.MainProject);
 
         string? version;
         try
@@ -40,7 +40,7 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
             .Pack(
                 new DotNetPackOptions
                 {
-                    ProjectSolution = buildContext.Project.EntryProject,
+                    ProjectSolution = buildContext.MainProject,
                     Configuration = buildContext.Configuration,
                     Output = outputDir,
                     NoBuild = true, // We already built in BuildModule

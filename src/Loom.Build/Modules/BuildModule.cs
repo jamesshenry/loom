@@ -18,9 +18,7 @@ public class BuildModule(LoomContext buildContext, IConfiguration configuration)
         bool isNativeBuild =
             buildContext.Target == BuildTarget.Release
             || buildContext.Target == BuildTarget.Publish;
-        var projectPath = isNativeBuild
-            ? buildContext.Project.EntryProject
-            : buildContext.Project.Solution;
+        var projectPath = isNativeBuild ? buildContext.MainProject : buildContext.Solution;
 
         return await context
             .DotNet()

@@ -39,8 +39,12 @@ public class PackModuleTests
 
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.NugetUpload },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.NugetUpload },
         };
         _loomContext = new LoomContext(settings);
     }

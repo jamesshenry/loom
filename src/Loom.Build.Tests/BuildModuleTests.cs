@@ -36,8 +36,12 @@ public class BuildModuleTests
 
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Build },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Build },
         };
         _loomContext = new LoomContext(settings);
     }
@@ -85,8 +89,12 @@ public class BuildModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Release },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Release },
         };
         var ctx = new LoomContext(settings);
 
@@ -109,8 +117,12 @@ public class BuildModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Publish },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Publish },
         };
         var ctx = new LoomContext(settings);
 
@@ -170,8 +182,12 @@ public class BuildModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Release, Rid = "linux-x64" },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "linux-x64" },
         };
         var ctx = new LoomContext(settings);
 
@@ -220,7 +236,7 @@ public class BuildModuleWrapper(LoomContext ctx, string version) : Module<Comman
     )
     {
         var isNativeBuild = ctx.Target == BuildTarget.Release || ctx.Target == BuildTarget.Publish;
-        var projectPath = isNativeBuild ? ctx.Project.EntryProject : ctx.Project.Solution;
+        var projectPath = isNativeBuild ? ctx.MainProject : ctx.Solution;
 
         return await context
             .DotNet()

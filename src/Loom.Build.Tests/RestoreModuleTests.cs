@@ -39,8 +39,12 @@ public class RestoreModuleTests
 
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Build },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Build },
         };
         _loomContext = new LoomContext(settings);
     }
@@ -86,8 +90,12 @@ public class RestoreModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Release, Rid = "linux-x64" },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "linux-x64" },
         };
         var ctx = new LoomContext(settings);
 

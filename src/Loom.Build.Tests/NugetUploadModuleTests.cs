@@ -43,9 +43,13 @@ public class NugetUploadModuleTests
 
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Release },
-            Nuget = new NugetConfig { ApiKey = "test-api-key" },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Release },
+            Packaging = new PackagingSettings { NugetApiKey = "test-api-key" },
         };
         _loomContext = new LoomContext(settings);
         _package = (File)"test.1.0.0.nupkg"!;
@@ -99,9 +103,13 @@ public class NugetUploadModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Release },
-            Nuget = new NugetConfig { ApiKey = null },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Release },
+            Packaging = new PackagingSettings { NugetApiKey = null },
         };
         var loomContextWithoutKey = new LoomContext(settings);
 

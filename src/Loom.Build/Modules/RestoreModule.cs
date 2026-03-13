@@ -20,7 +20,7 @@ public class RestoreModule(LoomContext buildContext, IConfiguration configuratio
             .Restore(
                 new DotNetRestoreOptions
                 {
-                    ProjectSolution = buildContext.Project.Solution,
+                    ProjectSolution = buildContext.Solution,
                     Runtime = buildContext.Rid,
                 },
                 executionOptions: new CommandExecutionOptions() { ThrowOnNonZeroExitCode = true },

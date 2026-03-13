@@ -35,8 +35,8 @@ public class PublishModuleTests
 
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "app.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Publish, Rid = "win-x64" },
+            Workspace = new WorkspaceSettings { Solution = "test.sln", MainProject = "app.csproj" },
+            Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = "win-x64" },
         };
         _loomContext = new LoomContext(settings);
     }
@@ -135,8 +135,8 @@ public class PublishModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "app.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Publish, Rid = null },
+            Workspace = new WorkspaceSettings { Solution = "test.sln", MainProject = "app.csproj" },
+            Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = null },
         };
         // LoomContext defaults to "win-x64" when Rid is null —
         // so to test the ArgumentException path we need to clear Rid after construction.
@@ -150,8 +150,8 @@ public class PublishModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "app.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Publish, Rid = "linux-x64" },
+            Workspace = new WorkspaceSettings { Solution = "test.sln", MainProject = "app.csproj" },
+            Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = "linux-x64" },
         };
         var ctx = new LoomContext(settings);
 

@@ -6,7 +6,6 @@ using ModularPipelines.Attributes;
 using ModularPipelines.Context;
 using ModularPipelines.Extensions;
 using ModularPipelines.FileSystem;
-using ModularPipelines.Models;
 using ModularPipelines.Modules;
 using ModularPipelines.Options;
 using Moq;
@@ -34,8 +33,12 @@ public class CleanModuleTests
         builder.Services.AddSingleton(_mockFileSystem.Object);
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig { Solution = "test.sln", EntryProject = "test.csproj" },
-            Build = new BuildConfig { Target = BuildTarget.Build },
+            Workspace = new WorkspaceSettings
+            {
+                Solution = "test.sln",
+                MainProject = "test.csproj",
+            },
+            Run = new ExecutionOptions { Target = BuildTarget.Build },
         };
         builder.Services.AddSingleton(new LoomContext(settings));
         builder.Services.AddModule<CleanModuleWrapper>();
@@ -136,7 +139,7 @@ public class CleanModuleWrapper(IFileSystemProvider fileSystem, LoomContext loom
             fileSystem.DeleteDirectory(artifactsPath, recursive: true);
         }
 
-        var distPath = Path.Combine(repoRoot, loomContext.DistDirectory);
+        var distPath = Path.Combine(repoRoot, loomContext.ArtifactsDirectory);
         if (fileSystem.DirectoryExists(distPath))
         {
             fileSystem.DeleteDirectory(distPath, recursive: true);

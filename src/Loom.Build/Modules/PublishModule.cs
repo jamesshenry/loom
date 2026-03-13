@@ -34,7 +34,7 @@ public class PublishModule(LoomContext buildContext, IConfiguration configuratio
 
         context.Logger.LogInformation(
             "Publishing {Project} for {Rid} in {Config} mode",
-            buildContext.Project.EntryProject,
+            buildContext.MainProject,
             buildContext.Rid,
             buildContext.Configuration
         );
@@ -44,7 +44,7 @@ public class PublishModule(LoomContext buildContext, IConfiguration configuratio
             .Publish(
                 new DotNetPublishOptions
                 {
-                    ProjectSolution = buildContext.Project.EntryProject,
+                    ProjectSolution = buildContext.MainProject,
                     Configuration = buildContext.Configuration,
                     Output = publishDir,
                     Runtime = buildContext.Rid,

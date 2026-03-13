@@ -20,7 +20,7 @@ public class CleanModule(LoomContext loomContext) : Module<bool>
             await artifacts.DeleteAsync(ct);
         }
         context.Logger.LogInformation("{artifacts} folder deleted.", artifacts);
-        var dist = context.Files.GetFolder(Path.Combine(repoRoot, loomContext.DistDirectory));
+        var dist = context.Files.GetFolder(Path.Combine(repoRoot, loomContext.ArtifactsDirectory));
         if (dist.Exists)
         {
             await dist.DeleteAsync(ct);

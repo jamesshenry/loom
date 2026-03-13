@@ -26,13 +26,13 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig
+            Workspace = new WorkspaceSettings
             {
                 Solution = "test.sln",
-                EntryProject = "test.csproj",
-                VelopackId = "MyApp",
+                MainProject = "test.csproj",
             },
-            Build = new BuildConfig { Target = BuildTarget.Release, Rid = "win-x64" },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "win-x64" },
+            Packaging = new PackagingSettings { VelopackId = "MyApp" },
         };
         _loomContext = new LoomContext(settings);
     }
@@ -60,18 +60,13 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig
+            Workspace = new WorkspaceSettings
             {
                 Solution = "test.sln",
-                EntryProject = "test.csproj",
-                VelopackId = "MyApp",
+                MainProject = "test.csproj",
             },
-            Build = new BuildConfig
-            {
-                Target = BuildTarget.Release,
-                Rid = "win-x64",
-                SkipPackaging = true,
-            },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "win-x64" },
+            Packaging = new PackagingSettings { VelopackId = "MyApp" },
         };
         var ctx = new LoomContext(settings);
 
@@ -98,13 +93,13 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig
+            Workspace = new WorkspaceSettings
             {
                 Solution = "test.sln",
-                EntryProject = "test.csproj",
-                VelopackId = "MyApp",
+                MainProject = "test.csproj",
             },
-            Build = new BuildConfig { Target = BuildTarget.Release, Rid = "osx-x64" },
+            Packaging = new PackagingSettings { VelopackId = "MyApp" },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "osx-x64" },
         };
 
         var pipeline = await BuildPipeline(ctx: new LoomContext(settings)).BuildAsync();
@@ -119,13 +114,13 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig
+            Workspace = new WorkspaceSettings
             {
                 Solution = "test.sln",
-                EntryProject = "test.csproj",
-                VelopackId = "MyApp",
+                MainProject = "test.csproj",
             },
-            Build = new BuildConfig { Target = BuildTarget.Release, Rid = "linux-x64" },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "linux-x64" },
+            Packaging = new PackagingSettings { VelopackId = "MyApp" },
         };
 
         var pipeline = await BuildPipeline(ctx: new LoomContext(settings)).BuildAsync();
@@ -159,13 +154,13 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Project = new ProjectConfig
+            Workspace = new WorkspaceSettings
             {
                 Solution = "test.sln",
-                EntryProject = "test.csproj",
-                VelopackId = null,
+                MainProject = "test.csproj",
             },
-            Build = new BuildConfig { Target = BuildTarget.Release, Rid = "win-x64" },
+            Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "win-x64" },
+            Packaging = new PackagingSettings { VelopackId = "MyApp" },
         };
 
         var pipeline = await BuildPipeline(ctx: new LoomContext(settings)).BuildAsync();
@@ -182,18 +177,6 @@ public class VelopackReleaseModuleWrapper(LoomContext ctx, VelopackVersion velop
 {
     public string? CapturedArguments { get; private set; }
 
-    protected override ModuleConfiguration Configure()
-    {
-        return ModuleConfiguration
-            .Create()
-            .WithSkipWhen(() =>
-                ctx.SkipPkg
-                    ? SkipDecision.Skip("Packaging explicitly skipped")
-                    : SkipDecision.DoNotSkip
-            )
-            .Build();
-    }
-
     protected override Task<CommandResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
@@ -203,10 +186,7 @@ public class VelopackReleaseModuleWrapper(LoomContext ctx, VelopackVersion velop
 
         ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
         ArgumentException.ThrowIfNullOrWhiteSpace(ctx.Rid, nameof(ctx.Rid));
-        ArgumentException.ThrowIfNullOrWhiteSpace(
-            ctx.Project.VelopackId,
-            nameof(ctx.Project.VelopackId)
-        );
+        ArgumentException.ThrowIfNullOrWhiteSpace(ctx.VelopackId, nameof(ctx.VelopackId));
 
         var root = context.Environment.WorkingDirectory;
         var publishDir = Path.Combine(root, "dist", "publish", ctx.Rid);
@@ -228,7 +208,7 @@ public class VelopackReleaseModuleWrapper(LoomContext ctx, VelopackVersion velop
                 directive,
                 "pack",
                 "--packId",
-                ctx.Project.VelopackId,
+                ctx.VelopackId,
                 "--packVersion",
                 version,
                 "--packDir",

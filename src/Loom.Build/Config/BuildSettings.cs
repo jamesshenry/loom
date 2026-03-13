@@ -51,6 +51,21 @@ public class ExecutionOptions
     public string? Version { get; set; } // E.g., 1.0.0-ci.123
 
     // Run Modifiers
-    public bool FastMode { get; set; } // Replaces 'Quick'
-    public string[] Skip { get; set; } = Array.Empty<string>(); // Flexible skipping
+    // public bool FastMode { get; set; } // Replaces 'Quick'
+
+    public IEnumerable<KeyValuePair<string, string?>> ToInMemoryCollection()
+    {
+        var dict = new Dictionary<string, string?>();
+
+        // Map to "Run:Rid", "Run:Target", etc. so IConfiguration binds it perfectly
+        if (Rid != null)
+            dict[$"{nameof(LoomSettings.Run)}:{nameof(Rid)}"] = Rid;
+
+        if (Version != null)
+            dict[$"{nameof(LoomSettings.Run)}:{nameof(Version)}"] = Version;
+
+        dict[$"{nameof(LoomSettings.Run)}:{nameof(Target)}"] = Target.ToString();
+
+        return dict;
+    }
 }

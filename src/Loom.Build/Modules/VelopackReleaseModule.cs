@@ -7,17 +7,17 @@ namespace Loom.Modules;
 [DependsOn<MinVerModule>]
 public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult>
 {
-    protected override ModuleConfiguration Configure()
-    {
-        return ModuleConfiguration
-            .Create()
-            .WithSkipWhen(() =>
-                buildContext.SkipPkg
-                    ? SkipDecision.Skip("Packaging explicitly skipped")
-                    : SkipDecision.DoNotSkip
-            )
-            .Build();
-    }
+    // protected override ModuleConfiguration Configure()
+    // {
+    //     return ModuleConfiguration
+    //         .Create()
+    //         .WithSkipWhen(() =>
+    //             buildContext.SkipPkg
+    //                 ? SkipDecision.Skip("Packaging explicitly skipped")
+    //                 : SkipDecision.DoNotSkip
+    //         )
+    //         .Build();
+    // }
 
     protected override async Task<CommandResult?> ExecuteAsync(
         IModuleContext context,
@@ -30,8 +30,8 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
         ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
         ArgumentException.ThrowIfNullOrWhiteSpace(buildContext.Rid, nameof(buildContext.Rid));
         ArgumentException.ThrowIfNullOrWhiteSpace(
-            buildContext.Project.VelopackId,
-            nameof(buildContext.Project.VelopackId)
+            buildContext.VelopackId,
+            nameof(buildContext.VelopackId)
         );
 
         var root = context.Environment.WorkingDirectory;
@@ -50,7 +50,7 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
 
         context.Logger.LogInformation(
             "Packaging {Id} {Version} for {Rid} using directive {Directive}",
-            buildContext.Project.VelopackId,
+            buildContext.VelopackId,
             version,
             buildContext.Rid,
             directive
@@ -65,7 +65,7 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
                     directive,
                     "pack",
                     "--packId",
-                    buildContext.Project.VelopackId,
+                    buildContext.VelopackId,
                     "--packVersion",
                     version,
                     "--packDir",

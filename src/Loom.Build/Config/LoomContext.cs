@@ -1,54 +1,51 @@
 namespace Loom.Config;
 
+using System.Runtime.InteropServices;
+
 public class LoomContext
 {
     public LoomContext(LoomSettings settings)
     {
-        ArgumentNullException.ThrowIfNull(settings);
-        ArgumentNullException.ThrowIfNull(settings.Project);
-        ArgumentNullException.ThrowIfNull(settings.Build);
+        if (string.IsNullOrWhiteSpace(settings.Workspace.Solution))
+            throw new ArgumentException("Workspace:Solution is required.");
+        if (string.IsNullOrWhiteSpace(settings.Workspace.MainProject))
+            throw new ArgumentException("Workspace:MainProject is required.");
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(settings.Project.Solution, nameof(settings));
-        ArgumentException.ThrowIfNullOrWhiteSpace(settings.Project.EntryProject, nameof(settings));
+        Solution = settings.Workspace.Solution;
+        MainProject = settings.Workspace.MainProject;
+        VelopackId = settings.Packaging.VelopackId;
+        NugetApiKey = settings.Packaging.NugetApiKey;
 
-        Project = settings.Project;
-        Rid = settings.Build.Rid ?? Win64;
-        Quick = settings.Build.Quick ?? false;
-        SkipPrep = settings.Build.SkipPreparation ?? false;
-        SkipPkg = settings.Build.SkipPackaging ?? false;
-        SkipDlv = settings.Build.SkipDelivery ?? false;
-        Target = settings.Build.Target ?? BuildTarget.Build;
-        DistDirectory = settings.Build.DistDirectory ?? ".dist";
-        NugetApiKey = settings.Nuget?.ApiKey;
+        Target = settings.Run.Target;
+        Version = settings.Run.Version ?? settings.Workspace.DefaultVersionPrefix;
+        Rid = settings.Run.Rid ?? GetDefaultRid();
+
+        // Simple default configuration
         Configuration =
-            (Quick || settings.Build.Target is BuildTarget.Publish or BuildTarget.Release)
-                ? "Release"
-                : "Debug";
+            settings.Run.Configuration
+            ?? (Target is BuildTarget.Release or BuildTarget.Publish ? "Release" : "Debug");
+        ArtifactsDirectory = settings.Workspace.ArtifactsPath;
     }
 
-    private const string Win64 = "win-x64";
-    public ProjectConfig Project { get; }
-    public string Rid { get; }
-    public bool Quick { get; }
-    public string Configuration { get; }
-    public bool SkipPrep { get; }
-    public bool SkipPkg { get; }
-    public bool SkipDlv { get; }
-    public BuildTarget Target { get; }
-    public string DistDirectory { get; }
+    public string Solution { get; }
+    public string MainProject { get; }
+    public string? VelopackId { get; }
     public string? NugetApiKey { get; }
 
-    public IEnumerable<string> GetIgnoredCategories()
+    public BuildTarget Target { get; }
+    public string Configuration { get; }
+    public string Rid { get; }
+    public string Version { get; }
+    public string ArtifactsDirectory { get; set; }
+
+    private static string GetDefaultRid()
     {
-        if (SkipPrep || Quick)
-            yield return "Preparation";
-        if (SkipPkg || Quick || Target is BuildTarget.Test or BuildTarget.Build)
-            yield return "Packaging";
-        if (
-            SkipDlv
-            || Quick
-            || Target is BuildTarget.Test or BuildTarget.Build or BuildTarget.Publish
-        )
-            yield return "Delivery";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return "win-x64";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+                ? "osx-arm64"
+                : "osx-x64";
+        return "linux-x64";
     }
 }

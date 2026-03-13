@@ -30,22 +30,14 @@ public class Commands
         CancellationToken ct,
         [HideDefaultValue] string? rid = null,
         [HideDefaultValue] string? version = null,
-        [HideDefaultValue] BuildTarget? target = null,
-        [HideDefaultValue] bool? quick = null,
-        [HideDefaultValue] bool? skipPreparation = null,
-        [HideDefaultValue] bool? skipPackaging = null,
-        [HideDefaultValue] bool? skipDelivery = null
+        [HideDefaultValue] BuildTarget? target = null
     )
     {
-        var cliOptions = new BuildConfig
+        var cliOptions = new ExecutionOptions
         {
             Rid = rid,
             Version = version,
-            Target = target,
-            Quick = quick,
-            SkipPreparation = skipPreparation,
-            SkipPackaging = skipPackaging,
-            SkipDelivery = skipDelivery,
+            Target = target ?? BuildTarget.Build,
         };
 
         var loomPath = Path.Combine(Environment.CurrentDirectory, "loom.json");
@@ -71,9 +63,8 @@ public class Commands
         builder.Services.AddServices(context);
         builder.Options.PrintLogo = false;
         builder.Options.ShowProgressInConsole = true;
-        builder.Options.IgnoreCategories = [.. context.GetIgnoredCategories()];
-        var pipeline = await builder.BuildAsync();
 
+        var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
     }
 
@@ -128,14 +119,17 @@ public class Commands
         // Build the Loom Context
         var loom = new LoomSettings
         {
-            Project = new ProjectConfig
+            Workspace = new WorkspaceSettings
             {
                 Solution = selectedSln,
-                EntryProject = selectedProj,
+                MainProject = selectedProj,
+            },
+            Run = new ExecutionOptions(),
+            Packaging = new PackagingSettings()
+            {
+                NugetApiKey = "",
                 VelopackId = Path.GetFileNameWithoutExtension(selectedSln),
             },
-            Build = new BuildConfig { Rid = "win-x64", SkipDelivery = false },
-            Nuget = new NugetConfig { ApiKey = "" },
         };
 
         var settings = new NewtonsoftJsonSchemaGeneratorSettings() { };
