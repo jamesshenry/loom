@@ -3,7 +3,7 @@ using Loom.Config;
 namespace Loom.Modules;
 
 [ModuleCategory("Preparation")]
-[DependsOn<CleanModule>]
+[DependsOn<CleanModule>(Optional = true)]
 public class RestoreToolsModule : Module<CommandResult>
 {
     protected override async Task<CommandResult?> ExecuteAsync(

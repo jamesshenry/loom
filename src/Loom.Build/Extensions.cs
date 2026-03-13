@@ -28,30 +28,34 @@ public static class Extensions
         internal IServiceCollection AddServices(LoomContext context)
         {
             services.AddSingleton(context);
+            services.AddModule<RestoreModule>();
+            services.AddModule<RestoreToolsModule>();
+            services.AddModule<MinVerModule>();
+            services.AddModule<PackModule>();
 
-            switch (context.Target)
-            {
-                case BuildTarget.Release:
-                    services.AddModule<VelopackReleaseModule>();
-                    break;
-                case BuildTarget.Publish:
-                    services.AddModule<PublishModule>();
-                    break;
-                case BuildTarget.Test:
-                    services.AddModule<TestModule>();
-                    break;
-                case BuildTarget.NugetUpload:
-                    services.AddModule<NugetUploadModule>();
-                    break;
-                case BuildTarget.Clean:
-                    services.AddModule<CleanModule>();
-                    break;
-                case BuildTarget.Build:
-                    services.AddModule<BuildModule>();
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unhandled enum value: {context.Target}");
-            }
+            // switch (context.Target)
+            // {
+            // case BuildTarget.Release:
+            services.AddModule<VelopackReleaseModule>();
+            // break;
+            // case BuildTarget.Publish:
+            services.AddModule<PublishModule>();
+            // break;
+            // case BuildTarget.Test:
+            services.AddModule<TestModule>();
+            // break;
+            // case BuildTarget.NugetUpload:
+            services.AddModule<NugetUploadModule>();
+            // break;
+            // case BuildTarget.Clean:
+            services.AddModule<CleanModule>();
+            // break;
+            // case BuildTarget.Build:
+            services.AddModule<BuildModule>();
+            // break;
+            // default:
+            // throw new InvalidOperationException($"Unhandled enum value: {context.Target}");
+            // }
             return services;
         }
     }

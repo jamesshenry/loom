@@ -3,7 +3,7 @@ using Loom.Config;
 namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
-[DependsOn<RestoreModule>]
+[DependsOn<RestoreModule>(Optional = true)]
 public class PublishModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {

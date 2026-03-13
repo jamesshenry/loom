@@ -1,6 +1,6 @@
 namespace Loom.Modules;
 
-[DependsOn<RestoreModule>]
+[DependsOn<RestoreModule>(Optional = true)]
 public class MinVerModule : Module<string>
 {
     protected override async Task<string?> ExecuteAsync(

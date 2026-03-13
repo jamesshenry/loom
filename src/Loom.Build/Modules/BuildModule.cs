@@ -2,7 +2,7 @@ using Loom.Config;
 
 namespace Loom.Modules;
 
-[DependsOn<RestoreModule>]
+[DependsOn<RestoreModule>(Optional = true)]
 [DependsOn<MinVerModule>]
 public class BuildModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
