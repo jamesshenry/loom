@@ -16,12 +16,10 @@ public class MinVerModule : Module<string>
             cancellationToken: ct
         );
 
-        // MinVer outputs the version string to Standard Output
         string version = result.StandardOutput.Trim();
         context.Logger.LogDebug(version);
         if (string.IsNullOrWhiteSpace(version))
         {
-            // This marks the module as failed, stopping the BuildModule from ever running
             throw new Exception(
                 "MinVer output was empty. Check if Git is initialized and tags exist."
             );

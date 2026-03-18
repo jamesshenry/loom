@@ -39,12 +39,12 @@ public class PackModuleTests
 
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.NugetUpload },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyPackage"] = new ArtifactSettings { Project = "test.csproj", Type = "NuGet" },
+            },
         };
         _loomContext = new LoomContext(settings);
     }

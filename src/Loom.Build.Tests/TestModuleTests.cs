@@ -33,11 +33,7 @@ public class TestModuleTests
 
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Test },
         };
         _loomContext = new LoomContext(settings);
@@ -58,7 +54,7 @@ public class TestModuleTests
         builder.Options.PrintResults = false;
         builder.Options.PrintLogo = false;
         builder.Options.PrintDependencyChains = false;
-        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
+        builder.Options.ThrowOnPipelineFailure = false;
         return builder;
     }
 
@@ -140,7 +136,6 @@ public class TestModuleTests
     [Test]
     public async Task ExecuteAsync_IgnoresExitCode8()
     {
-        // Exit code 8 = no tests found — should not fail the pipeline
         var builder = BuildPipeline();
         await (await builder.BuildAsync()).RunAsync();
 

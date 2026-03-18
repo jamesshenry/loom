@@ -118,20 +118,18 @@ public class Commands
                     )
             );
 
-        // Build the Loom Context
         var loom = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
+            Workspace = new WorkspaceSettings { Solution = selectedSln },
+            Artifacts = new Dictionary<string, ArtifactSettings>
             {
-                Solution = selectedSln,
-                MainProject = selectedProj,
+                [Path.GetFileNameWithoutExtension(selectedSln)] = new ArtifactSettings
+                {
+                    Project = selectedProj,
+                    Type = "Executable",
+                },
             },
             Run = new ExecutionOptions(),
-            Packaging = new PackagingSettings()
-            {
-                NugetApiKey = "",
-                VelopackId = Path.GetFileNameWithoutExtension(selectedSln),
-            },
         };
 
         var settings = new NewtonsoftJsonSchemaGeneratorSettings() { };

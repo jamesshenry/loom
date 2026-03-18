@@ -33,11 +33,7 @@ public class CleanModuleTests
         builder.Services.AddSingleton(_mockFileSystem.Object);
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln", ArtifactsPath = ".dist" },
             Run = new ExecutionOptions { Target = BuildTarget.Build },
         };
         builder.Services.AddSingleton(new LoomContext(settings));
@@ -48,7 +44,7 @@ public class CleanModuleTests
         builder.Options.PrintResults = false;
         builder.Options.PrintLogo = false;
         builder.Options.PrintDependencyChains = false;
-        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
+        builder.Options.ThrowOnPipelineFailure = false;
         return builder;
     }
 

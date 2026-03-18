@@ -28,10 +28,10 @@ public class NugetUploadModuleTests
     [Before(Test)]
     public void Setup()
     {
+        Environment.SetEnvironmentVariable("LOOM_NUGET_APIKEY", "test-api-key");
+
         _mockDotNet = new Mock<IDotNet>();
 
-        // DotNetNuget has a single-parameter constructor from its source generator.
-        // We provide null to allow Moq to create the proxy.
         _mockNuget = new Mock<DotNetNuget>(null!);
         _mockDotNet.Setup(x => x.Nuget).Returns(_mockNuget.Object);
 
@@ -43,16 +43,17 @@ public class NugetUploadModuleTests
 
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release },
-            Packaging = new PackagingSettings { NugetApiKey = "test-api-key" },
         };
         _loomContext = new LoomContext(settings);
         _package = (File)"test.1.0.0.nupkg"!;
+    }
+
+    [After(Test)]
+    public void TearDown()
+    {
+        Environment.SetEnvironmentVariable("LOOM_NUGET_APIKEY", null);
     }
 
     private PipelineBuilder BuildPipeline(
@@ -73,7 +74,7 @@ public class NugetUploadModuleTests
         builder.Options.PrintResults = false;
         builder.Options.PrintLogo = false;
         builder.Options.PrintDependencyChains = false;
-        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
+        builder.Options.ThrowOnPipelineFailure = false;
         return builder;
     }
 
@@ -101,15 +102,11 @@ public class NugetUploadModuleTests
     [Test]
     public async Task ExecuteAsync_MissingApiKey_SkipsPush()
     {
+        Environment.SetEnvironmentVariable("LOOM_NUGET_APIKEY", null);
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release },
-            Packaging = new PackagingSettings { NugetApiKey = null },
         };
         var loomContextWithoutKey = new LoomContext(settings);
 

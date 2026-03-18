@@ -6,7 +6,7 @@ using SearchOption = System.IO.SearchOption;
 namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
-[DependsOn<BuildModule>(Optional = true)] // Runs after Build when present, but can run standalone
+[DependsOn<BuildModule>(Optional = true)]
 public class PackModule(LoomContext buildContext) : Module<List<File>>
 {
     protected override async Task<List<File>?> ExecuteAsync(
@@ -14,7 +14,6 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
         CancellationToken ct
     )
     {
-        // 1. Find all artifacts marked as NuGet
         var nugetArtifacts = buildContext
             .Artifacts.Where(a => a.Value.Type.Equals("NuGet", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -25,14 +24,12 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
             return [];
         }
 
-        // 2. Use the new ArtifactsDirectory instead of hardcoded "dist"
         var outputDir = Path.Combine(
             context.Environment.WorkingDirectory,
             buildContext.ArtifactsDirectory,
             "nuget"
         );
 
-        // 3. Resolve global version
         string globalVersion;
         try
         {
@@ -41,11 +38,9 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
         }
         catch
         {
-            // Fallback to the Context version (which falls back to the DefaultVersionPrefix in loom.json)
             globalVersion = buildContext.Version;
         }
 
-        // 4. Iterate and pack each NuGet artifact
         foreach (var (artifactName, artifactSettings) in nugetArtifacts)
         {
             context.Logger.LogInformation(
@@ -54,7 +49,6 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
                 artifactSettings.Project
             );
 
-            // Allow artifact-specific version override if provided in loom.json
             var packVersion = artifactSettings.Version ?? globalVersion;
 
             await context
@@ -62,10 +56,10 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
                 .Pack(
                     new DotNetPackOptions
                     {
-                        ProjectSolution = artifactSettings.Project, // Only pack this specific .csproj
+                        ProjectSolution = artifactSettings.Project,
                         Configuration = buildContext.Configuration,
                         Output = outputDir,
-                        NoBuild = true, // We already built the whole solution in BuildModule
+                        NoBuild = true,
                         IncludeSymbols = true,
                         Properties = [new("Version", packVersion)],
                     },

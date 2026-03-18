@@ -36,11 +36,7 @@ public class BuildModuleTests
 
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Build },
         };
         _loomContext = new LoomContext(settings);
@@ -63,7 +59,7 @@ public class BuildModuleTests
         builder.Options.PrintResults = false;
         builder.Options.PrintLogo = false;
         builder.Options.PrintDependencyChains = false;
-        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
+        builder.Options.ThrowOnPipelineFailure = false;
         return builder;
     }
 
@@ -85,15 +81,11 @@ public class BuildModuleTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ReleaseTarget_UsesEntryProject()
+    public async Task ExecuteAsync_ReleaseTarget_UsesSolutionFile()
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release },
         };
         var ctx = new LoomContext(settings);
@@ -104,7 +96,7 @@ public class BuildModuleTests
         _mockDotNet.Verify(
             x =>
                 x.Build(
-                    It.Is<DotNetBuildOptions>(o => o.ProjectSolution == "test.csproj"),
+                    It.Is<DotNetBuildOptions>(o => o.ProjectSolution == "test.sln"),
                     null,
                     It.IsAny<CancellationToken>()
                 ),
@@ -113,15 +105,11 @@ public class BuildModuleTests
     }
 
     [Test]
-    public async Task ExecuteAsync_PublishTarget_UsesEntryProject()
+    public async Task ExecuteAsync_PublishTarget_UsesSolutionFile()
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Publish },
         };
         var ctx = new LoomContext(settings);
@@ -132,7 +120,7 @@ public class BuildModuleTests
         _mockDotNet.Verify(
             x =>
                 x.Build(
-                    It.Is<DotNetBuildOptions>(o => o.ProjectSolution == "test.csproj"),
+                    It.Is<DotNetBuildOptions>(o => o.ProjectSolution == "test.sln"),
                     null,
                     It.IsAny<CancellationToken>()
                 ),
@@ -178,15 +166,11 @@ public class BuildModuleTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ReleaseTarget_SetsRid()
+    public async Task ExecuteAsync_NeverSetsRid()
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "linux-x64" },
         };
         var ctx = new LoomContext(settings);
@@ -197,7 +181,7 @@ public class BuildModuleTests
         _mockDotNet.Verify(
             x =>
                 x.Build(
-                    It.Is<DotNetBuildOptions>(o => o.Runtime == "linux-x64"),
+                    It.Is<DotNetBuildOptions>(o => o.Runtime == null),
                     null,
                     It.IsAny<CancellationToken>()
                 ),
@@ -235,19 +219,15 @@ public class BuildModuleWrapper(LoomContext ctx, string version) : Module<Comman
         CancellationToken ct
     )
     {
-        var isNativeBuild = ctx.Target == BuildTarget.Release || ctx.Target == BuildTarget.Publish;
-        var projectPath = isNativeBuild ? ctx.MainProject : ctx.Solution;
-
         return await context
             .DotNet()
             .Build(
                 new DotNetBuildOptions
                 {
-                    ProjectSolution = projectPath,
+                    ProjectSolution = ctx.Solution,
                     NoRestore = true,
                     Configuration = ctx.Configuration,
                     Properties = [new("Version", version)],
-                    Runtime = isNativeBuild ? ctx.Rid : null,
                 },
                 cancellationToken: ct
             );

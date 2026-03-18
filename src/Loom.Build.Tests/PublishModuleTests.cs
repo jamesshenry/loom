@@ -1,7 +1,5 @@
-using System.Reflection;
 using Loom.Config;
 using Loom.Modules;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModularPipelines;
@@ -35,8 +33,12 @@ public class PublishModuleTests
 
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings { Solution = "test.sln", MainProject = "app.csproj" },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = "win-x64" },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyApp"] = new ArtifactSettings { Project = "app.csproj", Type = "Executable" },
+            },
         };
         _loomContext = new LoomContext(settings);
     }
@@ -48,7 +50,6 @@ public class PublishModuleTests
         builder.Services.AddSingleton(_mockDotNet.Object);
         builder.Services.AddSingleton(context);
         builder.Services.AddSingleton(new Mock<IFileSystemProvider>().Object);
-        builder.Services.AddSingleton(Mock.Of<IConfiguration>());
         builder.Services.AddModule(_ => new PublishModuleWrapper(context));
         builder.Services.AddLogging(b => b.ClearProviders());
         builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Default;
@@ -56,7 +57,7 @@ public class PublishModuleTests
         builder.Options.PrintResults = false;
         builder.Options.PrintLogo = false;
         builder.Options.PrintDependencyChains = false;
-        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
+        builder.Options.ThrowOnPipelineFailure = false;
         return builder;
     }
 
@@ -135,12 +136,10 @@ public class PublishModuleTests
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings { Solution = "test.sln", MainProject = "app.csproj" },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = null },
         };
-        // LoomContext defaults to "win-x64" when Rid is null —
-        // so to test the ArgumentException path we need to clear Rid after construction.
-        // This tests defensive coding; LoomContext.Rid always has a value, so verify that.
+
         var ctx = new LoomContext(settings);
         await Assert.That(ctx.Rid).IsEqualTo("win-x64");
     }
@@ -150,8 +149,12 @@ public class PublishModuleTests
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings { Solution = "test.sln", MainProject = "app.csproj" },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = "linux-x64" },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyApp"] = new ArtifactSettings { Project = "app.csproj", Type = "Executable" },
+            },
         };
         var ctx = new LoomContext(settings);
 
@@ -175,18 +178,4 @@ public class PublishModuleTests
 }
 
 [ModuleCategory("Test")]
-public class PublishModuleWrapper(LoomContext ctx) : Module<CommandResult>
-{
-    protected override async Task<CommandResult?> ExecuteAsync(
-        IModuleContext context,
-        CancellationToken ct
-    )
-    {
-        var realModule = new PublishModule(ctx, Mock.Of<IConfiguration>());
-        var method = typeof(PublishModule).GetMethod(
-            "ExecuteAsync",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        );
-        return await (Task<CommandResult?>)method!.Invoke(realModule, [context, ct])!;
-    }
-}
+public class PublishModuleWrapper(LoomContext ctx) : PublishModule(ctx) { }

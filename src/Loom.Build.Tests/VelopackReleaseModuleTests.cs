@@ -4,9 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModularPipelines;
 using ModularPipelines.Attributes;
-using ModularPipelines.Configuration;
 using ModularPipelines.Context;
-using ModularPipelines.Enums;
 using ModularPipelines.Extensions;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
@@ -26,13 +24,17 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "win-x64" },
-            Packaging = new PackagingSettings { VelopackId = "MyApp" },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyApp"] = new ArtifactSettings
+                {
+                    Project = "test.csproj",
+                    Type = "Velopack",
+                    VelopackId = "MyApp",
+                },
+            },
         };
         _loomContext = new LoomContext(settings);
     }
@@ -51,22 +53,17 @@ public class VelopackReleaseModuleTests
         builder.Options.PrintResults = false;
         builder.Options.PrintLogo = false;
         builder.Options.PrintDependencyChains = false;
-        builder.Options.ThrowOnPipelineFailure = false; // Tests handle failures explicitly
+        builder.Options.ThrowOnPipelineFailure = false;
         return builder;
     }
 
     [Test]
-    public async Task ExecuteAsync_SkipPkg_SkipsModule()
+    public async Task ExecuteAsync_NoVelopackArtifacts_NoCapturedArguments()
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "win-x64" },
-            Packaging = new PackagingSettings { VelopackId = "MyApp" },
         };
         var ctx = new LoomContext(settings);
 
@@ -74,8 +71,7 @@ public class VelopackReleaseModuleTests
         var summary = await pipeline.RunAsync();
 
         var module = summary.GetModule<VelopackReleaseModuleWrapper>();
-        var result = await module;
-        await Assert.That(result.ModuleStatus).IsEqualTo(Status.Skipped);
+        await Assert.That(module.CapturedArguments).IsNull();
     }
 
     [Test]
@@ -93,12 +89,16 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
+            Artifacts = new Dictionary<string, ArtifactSettings>
             {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
+                ["MyApp"] = new ArtifactSettings
+                {
+                    Project = "test.csproj",
+                    Type = "Velopack",
+                    VelopackId = "MyApp",
+                },
             },
-            Packaging = new PackagingSettings { VelopackId = "MyApp" },
             Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "osx-x64" },
         };
 
@@ -114,13 +114,17 @@ public class VelopackReleaseModuleTests
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "linux-x64" },
-            Packaging = new PackagingSettings { VelopackId = "MyApp" },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyApp"] = new ArtifactSettings
+                {
+                    Project = "test.csproj",
+                    Type = "Velopack",
+                    VelopackId = "MyApp",
+                },
+            },
         };
 
         var pipeline = await BuildPipeline(ctx: new LoomContext(settings)).BuildAsync();
@@ -150,22 +154,28 @@ public class VelopackReleaseModuleTests
     }
 
     [Test]
-    public async Task ExecuteAsync_Throws_WhenVelopackIdIsNull()
+    public async Task ExecuteAsync_UsesArtifactKeyWhenVelopackIdIsNull()
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                MainProject = "test.csproj",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
             Run = new ExecutionOptions { Target = BuildTarget.Release, Rid = "win-x64" },
-            Packaging = new PackagingSettings { VelopackId = "MyApp" },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyApp"] = new ArtifactSettings
+                {
+                    Project = "test.csproj",
+                    Type = "Velopack",
+                    VelopackId = null,
+                },
+            },
         };
 
         var pipeline = await BuildPipeline(ctx: new LoomContext(settings)).BuildAsync();
+        var summary = await pipeline.RunAsync();
 
-        await Assert.ThrowsAsync<Exception>(() => pipeline.RunAsync());
+        var module = summary.GetModule<VelopackReleaseModuleWrapper>();
+        await Assert.That(module.CapturedArguments!.Contains("MyApp")).IsTrue();
     }
 }
 
@@ -183,21 +193,33 @@ public class VelopackReleaseModuleWrapper(LoomContext ctx, VelopackVersion velop
     )
     {
         var version = velopackVersion.Value;
-
         ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
-        ArgumentException.ThrowIfNullOrWhiteSpace(ctx.Rid, nameof(ctx.Rid));
-        ArgumentException.ThrowIfNullOrWhiteSpace(ctx.VelopackId, nameof(ctx.VelopackId));
+
+        var velopackArtifacts = ctx
+            .Artifacts.Where(a =>
+                a.Value.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase)
+            )
+            .ToList();
+
+        if (velopackArtifacts.Count == 0)
+        {
+            return Task.FromResult<CommandResult?>(null);
+        }
+
+        var (artifactKey, artifactSettings) = velopackArtifacts[0];
+        var rid = artifactSettings.Rid ?? ctx.Rid;
+        var packId = artifactSettings.VelopackId ?? artifactKey;
 
         var root = context.Environment.WorkingDirectory;
-        var publishDir = Path.Combine(root, "dist", "publish", ctx.Rid);
-        var releaseDir = Path.Combine(root, "dist", "release", ctx.Rid);
+        var publishDir = Path.Combine(root, ctx.ArtifactsDirectory, "publish", artifactKey, rid);
+        var releaseDir = Path.Combine(root, ctx.ArtifactsDirectory, "release", artifactKey, rid);
 
-        string directive = ctx.Rid.ToLower() switch
+        string directive = rid.ToLower() switch
         {
             var r when r.StartsWith("win") => "[win]",
             var r when r.StartsWith("osx") => "[osx]",
             var r when r.StartsWith("linux") => "[linux]",
-            _ => throw new NotSupportedException($"RID {ctx.Rid} is not supported."),
+            _ => throw new NotSupportedException($"RID {rid} is not supported."),
         };
 
         CapturedArguments = string.Join(
@@ -208,7 +230,7 @@ public class VelopackReleaseModuleWrapper(LoomContext ctx, VelopackVersion velop
                 directive,
                 "pack",
                 "--packId",
-                ctx.VelopackId,
+                packId,
                 "--packVersion",
                 version,
                 "--packDir",

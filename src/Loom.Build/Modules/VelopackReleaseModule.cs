@@ -15,14 +15,12 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
         var versionModule = await context.GetModule<MinVerModule>();
         var globalVersion = versionModule.ValueOrDefault;
 
-        // 1. Get the exact outputs from the PublishModule!
         var publishModule = await context.GetModule<PublishModule>();
         var publishedArtifacts = publishModule.ValueOrDefault ?? new();
 
         var root = context.Environment.WorkingDirectory;
         var results = new List<CommandResult>();
 
-        // 2. Filter ONLY for the ones marked for Velopack
         var velopackArtifacts = publishedArtifacts
             .Where(a => a.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -34,7 +32,6 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
 
         foreach (var artifact in velopackArtifacts)
         {
-            // Fetch the specific settings for this artifact from the context
             var artifactSettings = buildContext.Artifacts[artifact.ArtifactName];
 
             var version = artifactSettings.Version ?? globalVersion;
@@ -42,7 +39,6 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
 
             ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
 
-            // We don't have to guess the publish path anymore, the previous module gave it to us!
             var publishDir = artifact.PublishDirectory.Path;
             var releaseDir = Path.Combine(
                 root,

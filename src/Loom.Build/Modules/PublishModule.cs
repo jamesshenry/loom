@@ -39,7 +39,6 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
             var rid = artifactSettings.Rid ?? buildContext.Rid;
             ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
 
-            // Calculate output directory
             var publishDirPath = Path.Combine(
                 context.Environment.WorkingDirectory,
                 buildContext.ArtifactsDirectory,
@@ -81,7 +80,6 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
                     cancellationToken: ct
                 );
 
-            // Add the strongly-typed record to our results
             results.Add(
                 new PublishedArtifact(
                     ArtifactName: artifactName,
