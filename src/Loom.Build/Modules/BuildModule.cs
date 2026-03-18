@@ -15,21 +15,16 @@ public class BuildModule(LoomContext buildContext, IConfiguration configuration)
     )
     {
         var version = await context.GetModule<MinVerModule>();
-        bool isNativeBuild =
-            buildContext.Target == BuildTarget.Release
-            || buildContext.Target == BuildTarget.Publish;
-        var projectPath = isNativeBuild ? buildContext.MainProject : buildContext.Solution;
 
         return await context
             .DotNet()
             .Build(
                 new DotNetBuildOptions
                 {
-                    ProjectSolution = projectPath,
+                    ProjectSolution = buildContext.Solution,
                     NoRestore = true,
                     Configuration = buildContext.Configuration,
                     Properties = [new("Version", version.ValueOrDefault!)],
-                    Runtime = isNativeBuild ? buildContext.Rid : null,
                 },
                 cancellationToken: ct
             );

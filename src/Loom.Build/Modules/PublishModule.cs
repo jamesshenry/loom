@@ -1,56 +1,97 @@
 using Loom.Config;
+using ModularPipelines.FileSystem;
 
 namespace Loom.Modules;
 
+public record PublishedArtifact(
+    string ArtifactName,
+    Folder PublishDirectory,
+    string Rid,
+    string Type
+);
+
 [ModuleCategory("Packaging")]
 [DependsOn<RestoreModule>(Optional = true)]
-public class PublishModule(LoomContext buildContext, IConfiguration configuration)
-    : Module<CommandResult>
+public class PublishModule(LoomContext buildContext) : Module<List<PublishedArtifact>>
 {
-    private readonly IConfiguration _configuration = configuration;
-
-    protected override async Task<CommandResult?> ExecuteAsync(
+    protected override async Task<List<PublishedArtifact>?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(buildContext.Rid, nameof(buildContext.Rid));
+        var publishableArtifacts = buildContext
+            .Artifacts.Where(a =>
+                a.Value.Type.Equals("Executable", StringComparison.OrdinalIgnoreCase)
+                || a.Value.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase)
+            )
+            .ToList();
 
-        var publishDir = Path.Combine(
-            context.Environment.WorkingDirectory,
-            "dist",
-            "publish",
-            buildContext.Rid
-        );
-
-        if (Directory.Exists(publishDir))
+        if (publishableArtifacts.Count == 0)
         {
-            context.Logger.LogInformation(
-                "Cleaning existing publish directory: {Path}",
-                publishDir
-            );
-            Directory.Delete(publishDir, true);
+            context.Logger.LogInformation("No Executable or Velopack artifacts defined. Skipping.");
+            return [];
         }
 
-        context.Logger.LogInformation(
-            "Publishing {Project} for {Rid} in {Config} mode",
-            buildContext.MainProject,
-            buildContext.Rid,
-            buildContext.Configuration
-        );
+        var results = new List<PublishedArtifact>();
 
-        return await context
-            .DotNet()
-            .Publish(
-                new DotNetPublishOptions
-                {
-                    ProjectSolution = buildContext.MainProject,
-                    Configuration = buildContext.Configuration,
-                    Output = publishDir,
-                    Runtime = buildContext.Rid,
-                    NoRestore = true,
-                },
-                cancellationToken: ct
+        foreach (var (artifactName, artifactSettings) in publishableArtifacts)
+        {
+            var rid = artifactSettings.Rid ?? buildContext.Rid;
+            ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
+
+            // Calculate output directory
+            var publishDirPath = Path.Combine(
+                context.Environment.WorkingDirectory,
+                buildContext.ArtifactsDirectory,
+                "publish",
+                artifactName,
+                rid
             );
+
+            var publishFolder = context.Files.GetFolder(publishDirPath);
+
+            if (publishFolder.Exists)
+            {
+                context.Logger.LogInformation(
+                    "Cleaning existing publish directory: {Path}",
+                    publishFolder.Path
+                );
+                await publishFolder.DeleteAsync(ct);
+            }
+
+            context.Logger.LogInformation(
+                "Publishing {ArtifactName} ({Project}) for {Rid} in {Config} mode",
+                artifactName,
+                artifactSettings.Project,
+                rid,
+                buildContext.Configuration
+            );
+
+            await context
+                .DotNet()
+                .Publish(
+                    new DotNetPublishOptions
+                    {
+                        ProjectSolution = artifactSettings.Project,
+                        Configuration = buildContext.Configuration,
+                        Output = publishFolder.Path,
+                        Runtime = rid,
+                        NoRestore = true,
+                    },
+                    cancellationToken: ct
+                );
+
+            // Add the strongly-typed record to our results
+            results.Add(
+                new PublishedArtifact(
+                    ArtifactName: artifactName,
+                    PublishDirectory: publishFolder,
+                    Rid: rid,
+                    Type: artifactSettings.Type
+                )
+            );
+        }
+
+        return results;
     }
 }

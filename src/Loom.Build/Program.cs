@@ -51,9 +51,11 @@ public class Commands
         var config = new ConfigurationBuilder()
             .SetBasePath(Environment.CurrentDirectory)
             .AddJsonFile("loom.json", optional: false)
+            .AddEnvironmentVariables(prefix: "LOOM_")
             .AddInMemoryCollection(cliOptions.ToInMemoryCollection())
             .AddEnvironmentVariables()
             .Build();
+
         var settings = new LoomSettings();
         config.Bind(settings);
         var context = new LoomContext(settings);

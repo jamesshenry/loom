@@ -5,77 +5,88 @@ namespace Loom.Modules;
 [ModuleCategory("Packaging")]
 [DependsOn<PublishModule>]
 [DependsOn<MinVerModule>]
-public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult>
+public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult[]>
 {
-    // protected override ModuleConfiguration Configure()
-    // {
-    //     return ModuleConfiguration
-    //         .Create()
-    //         .WithSkipWhen(() =>
-    //             buildContext.SkipPkg
-    //                 ? SkipDecision.Skip("Packaging explicitly skipped")
-    //                 : SkipDecision.DoNotSkip
-    //         )
-    //         .Build();
-    // }
-
-    protected override async Task<CommandResult?> ExecuteAsync(
+    protected override async Task<CommandResult[]?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
         var versionModule = await context.GetModule<MinVerModule>();
-        var version = versionModule.ValueOrDefault;
+        var globalVersion = versionModule.ValueOrDefault;
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
-        ArgumentException.ThrowIfNullOrWhiteSpace(buildContext.Rid, nameof(buildContext.Rid));
-        ArgumentException.ThrowIfNullOrWhiteSpace(
-            buildContext.VelopackId,
-            nameof(buildContext.VelopackId)
-        );
+        // 1. Get the exact outputs from the PublishModule!
+        var publishModule = await context.GetModule<PublishModule>();
+        var publishedArtifacts = publishModule.ValueOrDefault ?? new();
 
         var root = context.Environment.WorkingDirectory;
-        var publishDir = Path.Combine(root, "dist", "publish", buildContext.Rid);
-        var releaseDir = Path.Combine(root, "dist", "release", buildContext.Rid);
+        var results = new List<CommandResult>();
 
-        string directive = buildContext.Rid.ToLower() switch
+        // 2. Filter ONLY for the ones marked for Velopack
+        var velopackArtifacts = publishedArtifacts
+            .Where(a => a.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (velopackArtifacts.Count == 0)
         {
-            var r when r.StartsWith("win") => "[win]",
-            var r when r.StartsWith("osx") => "[osx]",
-            var r when r.StartsWith("linux") => "[linux]",
-            _ => throw new NotSupportedException(
-                $"RID {buildContext.Rid} is not supported by Velopack."
-            ),
-        };
+            return [];
+        }
 
-        context.Logger.LogInformation(
-            "Packaging {Id} {Version} for {Rid} using directive {Directive}",
-            buildContext.VelopackId,
-            version,
-            buildContext.Rid,
-            directive
-        );
+        foreach (var artifact in velopackArtifacts)
+        {
+            // Fetch the specific settings for this artifact from the context
+            var artifactSettings = buildContext.Artifacts[artifact.ArtifactName];
 
-        return await context.Shell.Command.ExecuteCommandLineTool(
-            new VelopackOptions
+            var version = artifactSettings.Version ?? globalVersion;
+            var packId = artifactSettings.VelopackId ?? artifact.ArtifactName;
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
+
+            // We don't have to guess the publish path anymore, the previous module gave it to us!
+            var publishDir = artifact.PublishDirectory.Path;
+            var releaseDir = Path.Combine(
+                root,
+                buildContext.ArtifactsDirectory,
+                "release",
+                artifact.ArtifactName,
+                artifact.Rid
+            );
+
+            string directive = artifact.Rid.ToLower() switch
             {
-                Arguments =
-                [
-                    "vpk",
-                    directive,
-                    "pack",
-                    "--packId",
-                    buildContext.VelopackId,
-                    "--packVersion",
-                    version,
-                    "--packDir",
-                    publishDir,
-                    "--outputDir",
-                    releaseDir,
-                    "--yes",
-                ],
-            },
-            cancellationToken: ct
-        );
+                var r when r.StartsWith("win") => "[win]",
+                var r when r.StartsWith("osx") => "[osx]",
+                var r when r.StartsWith("linux") => "[linux]",
+                _ => throw new NotSupportedException(
+                    $"RID {artifact.Rid} is not supported by Velopack."
+                ),
+            };
+
+            var result = await context.Shell.Command.ExecuteCommandLineTool(
+                new VelopackOptions
+                {
+                    Arguments =
+                    [
+                        "vpk",
+                        directive,
+                        "pack",
+                        "--packId",
+                        packId,
+                        "--packVersion",
+                        version,
+                        "--packDir",
+                        publishDir,
+                        "--outputDir",
+                        releaseDir,
+                        "--yes",
+                    ],
+                },
+                cancellationToken: ct
+            );
+
+            results.Add(result);
+        }
+
+        return [.. results];
     }
 }

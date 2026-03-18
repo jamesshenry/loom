@@ -2,7 +2,7 @@
   "profiles": {
     "targets2": {
       "commandName": "Project",
-      "commandLineArgs": "init",
+      "commandLineArgs": "",
       "workingDirectory": "V:/source/personal/typical",
     }
   }
