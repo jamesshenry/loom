@@ -43,7 +43,11 @@ public class PackModuleTests
             Run = new ExecutionOptions { Target = BuildTarget.NugetUpload },
             Artifacts = new Dictionary<string, ArtifactSettings>
             {
-                ["MyPackage"] = new ArtifactSettings { Project = "test.csproj", Type = "NuGet" },
+                ["MyPackage"] = new ArtifactSettings
+                {
+                    Project = "test.csproj",
+                    Type = ArtifactType.Nuget,
+                },
             },
         };
         _loomContext = new LoomContext(settings);

@@ -15,7 +15,7 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
     )
     {
         var nugetArtifacts = buildContext
-            .Artifacts.Where(a => a.Value.Type.Equals("NuGet", StringComparison.OrdinalIgnoreCase))
+            .Artifacts.Where(a => a.Value.Type == ArtifactType.Nuget)
             .ToList();
 
         if (nugetArtifacts.Count == 0)

@@ -22,7 +22,7 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
         var results = new List<CommandResult>();
 
         var velopackArtifacts = publishedArtifacts
-            .Where(a => a.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase))
+            .Where(a => a.Type == ArtifactType.Executable)
             .ToList();
 
         if (velopackArtifacts.Count == 0)

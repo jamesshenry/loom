@@ -2,13 +2,11 @@ using System.Text.Json;
 using ConsoleAppFramework;
 using Loom;
 using Loom.Config;
-using ModularPipelines;
-using Newtonsoft.Json.Serialization;
 using NJsonSchema;
 using NJsonSchema.Generation;
-using NJsonSchema.NewtonsoftJson.Generation;
-using Spectre.Console;
 #pragma warning disable ConsoleUse // Use of Console detected
+
+await CreateLoomShema();
 
 string repoRoot = Directory.GetRepoRoot(Directory.GetCurrentDirectory());
 
@@ -20,139 +18,64 @@ await app.RunAsync(args);
 
 #if DEBUG
 Console.ReadLine();
-#pragma warning restore ConsoleUse // Use of Console detected
+
 #endif
+#pragma warning restore ConsoleUse // Use of Console detected
 
-public class Commands
+async Task CreateLoomShema()
 {
-    [Command("")]
-    public async Task Root(
-        CancellationToken ct,
-        [HideDefaultValue] string? rid = null,
-        [HideDefaultValue] string? version = null,
-        [HideDefaultValue] BuildTarget? target = null
-    )
+    var settings = new SystemTextJsonSchemaGeneratorSettings
     {
-        var cliOptions = new ExecutionOptions
-        {
-            Rid = rid,
-            Version = version,
-            Target = target ?? BuildTarget.Build,
-        };
+        SerializerOptions = { PropertyNamingPolicy = JsonNamingPolicy.CamelCase },
+    };
 
-        var loomPath = Path.Combine(Environment.CurrentDirectory, "loom.json");
+    var schema = JsonSchema.FromType<LoomSettings>(settings);
 
-        if (!File.Exists(loomPath))
-        {
-            AnsiConsole.MarkupLine("[red]Error:[/] loom.json not found.");
-            AnsiConsole.MarkupLine("Run [yellow]dotnet loom init[/] to get started.");
-            Environment.Exit(1);
-        }
-        var config = new ConfigurationBuilder()
-            .SetBasePath(Environment.CurrentDirectory)
-            .AddJsonFile("loom.json", optional: false)
-            .AddEnvironmentVariables(prefix: "LOOM_")
-            .AddInMemoryCollection(cliOptions.ToInMemoryCollection())
-            .AddEnvironmentVariables()
-            .Build();
-
-        var settings = new LoomSettings();
-        config.Bind(settings);
-        var context = new LoomContext(settings);
-
-        var builder = Pipeline.CreateBuilder();
-        builder.Configuration.AddConfiguration(config);
-        builder.Services.AddServices(context);
-        builder.Options.PrintLogo = false;
-        builder.Options.ShowProgressInConsole = true;
-
-        var pipeline = await builder.BuildAsync();
-        await pipeline.RunAsync();
-    }
-
-    [Command("init")]
-    public async Task Init()
+    schema.Properties["$schema"] = new JsonSchemaProperty
     {
-        var currentDir = new DirectoryInfo(Environment.CurrentDirectory);
+        Type = JsonObjectType.String,
+        Description = "The URL to the JSON schema for this file.",
+    };
 
-        var solutions = currentDir.GetFiles("*.sln*").Select(f => f.Name).ToList();
-
-        if (solutions.Count == 0)
+    var ridSchema = new JsonSchema
+    {
+        Type = JsonObjectType.String,
+        Enumeration =
         {
-            AnsiConsole.MarkupLine(
-                "[red]Error:[/] No .sln or .slnx files found in the current directory."
-            );
-            return;
-        }
+            "win-x64",
+            "win-arm64",
+            "linux-x64",
+            "linux-arm64",
+            "osx-x64",
+            "osx-arm64",
+        },
+    };
 
-        string selectedSln =
-            solutions.Count == 1
-                ? solutions[0]
-                : AnsiConsole.Prompt(
-                    new SelectionPrompt<string>()
-                        .Title(
-                            "Multiple solution files found. [green]Which one should Loom use?[/]"
-                        )
-                        .AddChoices(solutions)
-                );
+    schema.Definitions["RuntimeIdentifier"] = ridSchema;
 
-        var projFiles = currentDir
-            .GetFiles("*.csproj", SearchOption.AllDirectories)
-            .Where(f =>
-                !f.FullName.Contains("test", StringComparison.OrdinalIgnoreCase)
-                && !f.FullName.Contains("build", StringComparison.OrdinalIgnoreCase)
-            )
-            .ToList();
-
-        string selectedProj =
-            projFiles.Count == 0 ? "src/YourProject.csproj"
-            : projFiles.Count == 1
-                ? Path.GetRelativePath(Environment.CurrentDirectory, projFiles[0].FullName)
-            : AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Multiple projects found. [green]Which is the main entry project?[/]")
-                    .AddChoices(
-                        projFiles.Select(f =>
-                            Path.GetRelativePath(Environment.CurrentDirectory, f.FullName)
-                        )
-                    )
-            );
-
-        var loom = new LoomSettings
+    foreach (var def in schema.Definitions.Values)
+    {
+        foreach (var prop in def.Properties)
         {
-            Workspace = new WorkspaceSettings { Solution = selectedSln },
-            Artifacts = new Dictionary<string, ArtifactSettings>
+            if (prop.Key.Equals("rid", StringComparison.OrdinalIgnoreCase))
             {
-                [Path.GetFileNameWithoutExtension(selectedSln)] = new ArtifactSettings
-                {
-                    Project = selectedProj,
-                    Type = "Executable",
-                },
-            },
-            Run = new ExecutionOptions(),
-        };
-
-        var settings = new NewtonsoftJsonSchemaGeneratorSettings() { };
-        settings.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-        var schema = JsonSchema.FromType<LoomSettings>(settings);
-
-        schema.Properties["$schema"] = new JsonSchemaProperty
-        {
-            Type = JsonObjectType.String,
-            Description = "The URL to the JSON schema for this file.",
-        };
-
-        var schemaJson = schema.ToJson(Newtonsoft.Json.Formatting.Indented);
-        await File.WriteAllTextAsync("loom.schema.json", schemaJson);
-
-        var jsonContent = JsonSerializer.Serialize(loom, LoomSettingsContext.Default.LoomSettings);
-
-        var finalJson = $$"""
-{
-  "$schema": "./loom.schema.json",{{jsonContent[1..]}}
-""";
-
-        await File.WriteAllTextAsync("loom.json", finalJson);
-        AnsiConsole.MarkupLine($"[green]Successfully initialized loom.json for {selectedSln}[/]");
+                prop.Value.Reference = ridSchema;
+                prop.Value.Type = JsonObjectType.None; // remove inline type
+            }
+        }
     }
+    foreach (var def in schema.Definitions.Values)
+    {
+        foreach (var prop in def.Properties.Values)
+        {
+            if (prop.Type.HasFlag(JsonObjectType.Null))
+            {
+                prop.Type &= ~JsonObjectType.Null;
+            }
+        }
+    }
+
+    var json = schema.ToJson();
+    var schemaJson = schema.ToJson();
+    await File.WriteAllTextAsync("loom.schema.json", schemaJson);
 }

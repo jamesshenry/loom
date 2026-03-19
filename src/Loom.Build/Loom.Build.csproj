@@ -5,7 +5,7 @@
     <RootNamespace>Loom</RootNamespace>
     <ToolCommandName>loom</ToolCommandName>
     <PackageId>Loom.Build</PackageId>
-    <PublishAot>true</PublishAot>
+    <!-- <PublishAot>true</PublishAot> -->
     <OptimizationPreference>Size</OptimizationPreference>
     <StackTraceSupport>true</StackTraceSupport>
     <PackAsTool>true</PackAsTool>

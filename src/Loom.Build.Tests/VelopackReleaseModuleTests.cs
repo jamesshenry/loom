@@ -31,7 +31,8 @@ public class VelopackReleaseModuleTests
                 ["MyApp"] = new ArtifactSettings
                 {
                     Project = "test.csproj",
-                    Type = "Velopack",
+                    Type = ArtifactType.Velopack,
+
                     VelopackId = "MyApp",
                 },
             },
@@ -95,7 +96,8 @@ public class VelopackReleaseModuleTests
                 ["MyApp"] = new ArtifactSettings
                 {
                     Project = "test.csproj",
-                    Type = "Velopack",
+                    Type = ArtifactType.Velopack,
+
                     VelopackId = "MyApp",
                 },
             },
@@ -121,7 +123,8 @@ public class VelopackReleaseModuleTests
                 ["MyApp"] = new ArtifactSettings
                 {
                     Project = "test.csproj",
-                    Type = "Velopack",
+                    Type = ArtifactType.Velopack,
+
                     VelopackId = "MyApp",
                 },
             },
@@ -165,7 +168,7 @@ public class VelopackReleaseModuleTests
                 ["MyApp"] = new ArtifactSettings
                 {
                     Project = "test.csproj",
-                    Type = "Velopack",
+                    Type = ArtifactType.Velopack,
                     VelopackId = null,
                 },
             },
@@ -196,9 +199,7 @@ public class VelopackReleaseModuleWrapper(LoomContext ctx, VelopackVersion velop
         ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
 
         var velopackArtifacts = ctx
-            .Artifacts.Where(a =>
-                a.Value.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase)
-            )
+            .Artifacts.Where(a => a.Value.Type == ArtifactType.Velopack)
             .ToList();
 
         if (velopackArtifacts.Count == 0)

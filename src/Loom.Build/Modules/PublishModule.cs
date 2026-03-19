@@ -7,7 +7,7 @@ public record PublishedArtifact(
     string ArtifactName,
     Folder PublishDirectory,
     string Rid,
-    string Type
+    ArtifactType Type
 );
 
 [ModuleCategory("Packaging")]
@@ -21,8 +21,7 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
     {
         var publishableArtifacts = buildContext
             .Artifacts.Where(a =>
-                a.Value.Type.Equals("Executable", StringComparison.OrdinalIgnoreCase)
-                || a.Value.Type.Equals("Velopack", StringComparison.OrdinalIgnoreCase)
+                a.Value.Type == ArtifactType.Executable || a.Value.Type == ArtifactType.Velopack
             )
             .ToList();
 

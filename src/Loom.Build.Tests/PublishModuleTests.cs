@@ -37,7 +37,11 @@ public class PublishModuleTests
             Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = "win-x64" },
             Artifacts = new Dictionary<string, ArtifactSettings>
             {
-                ["MyApp"] = new ArtifactSettings { Project = "app.csproj", Type = "Executable" },
+                ["MyApp"] = new ArtifactSettings
+                {
+                    Project = "app.csproj",
+                    Type = ArtifactType.Executable,
+                },
             },
         };
         _loomContext = new LoomContext(settings);
@@ -153,7 +157,11 @@ public class PublishModuleTests
             Run = new ExecutionOptions { Target = BuildTarget.Publish, Rid = "linux-x64" },
             Artifacts = new Dictionary<string, ArtifactSettings>
             {
-                ["MyApp"] = new ArtifactSettings { Project = "app.csproj", Type = "Executable" },
+                ["MyApp"] = new ArtifactSettings
+                {
+                    Project = "app.csproj",
+                    Type = ArtifactType.Executable,
+                },
             },
         };
         var ctx = new LoomContext(settings);
