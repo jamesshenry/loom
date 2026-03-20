@@ -22,6 +22,9 @@ public class LoomContext
 
         Artifacts = settings.Artifacts.AsReadOnly();
 
+        RequiresMinVer = true;
+        RequiresVelopack = settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack);
+
         NugetApiKey = Environment.GetEnvironmentVariable("LOOM_NUGET_APIKEY");
     }
 
@@ -34,6 +37,10 @@ public class LoomContext
     public string Configuration { get; }
     public string Rid { get; }
     public string Version { get; }
+
+    public bool RequiresMinVer { get; }
+    public bool RequiresVelopack { get; }
+
     public string? NugetApiKey { get; }
 
     private static string GetDefaultRid()

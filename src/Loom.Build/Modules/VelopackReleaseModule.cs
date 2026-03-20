@@ -5,6 +5,7 @@ namespace Loom.Modules;
 [ModuleCategory("Packaging")]
 [DependsOn<PublishModule>]
 [DependsOn<MinVerModule>]
+[DependsOn<RestoreToolsModule>]
 public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult[]>
 {
     protected override ModuleConfiguration Configure()

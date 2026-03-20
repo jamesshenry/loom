@@ -3,16 +3,29 @@
     <DefineConstants>$(DefineConstants);GENERATE_SCHEMA</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <RollForward>Major</RollForward>
+    <OutputType>Exe</OutputType>
     <AssemblyName>loom</AssemblyName>
     <RootNamespace>Loom</RootNamespace>
-    <ToolCommandName>loom</ToolCommandName>
+  </PropertyGroup>
+  <PropertyGroup>
     <PackageId>Loom.Build</PackageId>
-    <PublishSelfContained>false</PublishSelfContained>
     <PackAsTool>true</PackAsTool>
+    <ToolCommandName>loom</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <Description>An opinionated build tool for .NET projects using Modular Pipelines.</Description>
+    <Authors>jamesshenry</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/jamesshenry/loom</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jamesshenry/loom.git</RepositoryUrl>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PublishSelfContained>false</PublishSelfContained>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+  </PropertyGroup>
+  <PropertyGroup>
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Loom.Build.Tests" />
@@ -30,6 +43,6 @@
     <PackageReference Include="NJsonSchema" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="loom.schema.json.example" CopyToOutputDirectory="PreserveNewest"></None>
+    <None Include="loom.schema.json.example" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

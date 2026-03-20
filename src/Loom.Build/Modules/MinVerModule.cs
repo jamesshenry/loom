@@ -1,7 +1,7 @@
 namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
-[DependsOn<RestoreModule>(Optional = true)]
+[DependsOn<RestoreToolsModule>]
 public class MinVerModule : Module<string>
 {
     protected override async Task<string?> ExecuteAsync(
