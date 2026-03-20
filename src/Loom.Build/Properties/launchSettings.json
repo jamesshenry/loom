@@ -3,7 +3,7 @@
     "targets2": {
       "commandName": "Project",
       "commandLineArgs": "init",
-      "workingDirectory": "C:/source/personal/loom.example",
+      "workingDirectory": "C:/source/personal/typical",
     }
   }
 }

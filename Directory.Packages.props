@@ -17,7 +17,6 @@
     <PackageVersion Include="ModularPipelines.Git" Version="3.1.90" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="NJsonSchema" Version="11.5.2" />
-    <PackageVersion Include="NJsonSchema.NewtonsoftJson" Version="11.5.2" />
-    <PackageVersion Include="TUnit" Version="1.19.22" />
+    <PackageVersion Include="TUnit" Version="1.19.74" />
   </ItemGroup>
 </Project>
