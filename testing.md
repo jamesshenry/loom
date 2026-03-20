@@ -25,7 +25,7 @@ For testing how a module interacts with the pipeline engine, its dependencies, o
 1. **Use `PipelineHostBuilder`**: Construct a pipeline using `TestPipelineHostBuilder`.
 2. **Control Dependencies**:
     * **Dummy Modules**: Define minimal, private "dummy" module classes within your test class to satisfy `DependsOn` requirements.
-    * **Optional Dependencies**: Mark dependencies as `[DependsOn<T>(Optional = true)]` if they aren't strictly required, so the `ModuleAutoRegistrar` ignores them.
+    * **Optional Dependencies**: Mark dependencies as `[DependsOn<T>]` if they aren't strictly required, so the `ModuleAutoRegistrar` ignores them.
 3. **`TestBase.cs`**: Inherit from `TestBase` in your test classes. This provides:
     * Helper methods (`RunModule<T>`, `RunModules<...>`) for reduced boilerplate.
     * Automatic resource cleanup (`[After(Test)]` hook to dispose pipelines).

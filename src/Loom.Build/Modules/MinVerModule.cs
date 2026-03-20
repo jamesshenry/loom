@@ -1,5 +1,6 @@
 namespace Loom.Modules;
 
+[ModuleCategory("Packaging")]
 [DependsOn<RestoreModule>(Optional = true)]
 public class MinVerModule : Module<string>
 {

@@ -7,6 +7,19 @@ namespace Loom.Modules;
 [DependsOn<MinVerModule>]
 public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult[]>
 {
+    protected override ModuleConfiguration Configure()
+    {
+        return ModuleConfiguration
+            .Create()
+            .WithSkipWhen(ctx =>
+            {
+                return !buildContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Velopack)
+                    ? SkipDecision.Skip("No velopack artifacts defined in loom.json")
+                    : SkipDecision.DoNotSkip;
+            })
+            .Build();
+    }
+
     protected override async Task<CommandResult[]?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
@@ -22,13 +35,8 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
         var results = new List<CommandResult>();
 
         var velopackArtifacts = publishedArtifacts
-            .Where(a => a.Type == ArtifactType.Executable)
+            .Where(a => a.Type == ArtifactType.Velopack)
             .ToList();
-
-        if (velopackArtifacts.Count == 0)
-        {
-            return [];
-        }
 
         foreach (var artifact in velopackArtifacts)
         {

@@ -14,6 +14,18 @@ public record PublishedArtifact(
 [DependsOn<RestoreModule>(Optional = true)]
 public class PublishModule(LoomContext buildContext) : Module<List<PublishedArtifact>>
 {
+    protected override ModuleConfiguration Configure() =>
+        ModuleConfiguration
+            .Create()
+            .WithSkipWhen(ctx =>
+                !buildContext.Artifacts.Any(a =>
+                    a.Value.Type == ArtifactType.Executable || a.Value.Type == ArtifactType.Velopack
+                )
+                    ? SkipDecision.Skip("No velopack or executable artifacts defined in loom.json")
+                    : SkipDecision.DoNotSkip
+            )
+            .Build();
+
     protected override async Task<List<PublishedArtifact>?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
@@ -24,12 +36,6 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
                 a.Value.Type == ArtifactType.Executable || a.Value.Type == ArtifactType.Velopack
             )
             .ToList();
-
-        if (publishableArtifacts.Count == 0)
-        {
-            context.Logger.LogInformation("No Executable or Velopack artifacts defined. Skipping.");
-            return [];
-        }
 
         var results = new List<PublishedArtifact>();
 

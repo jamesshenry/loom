@@ -1,17 +1,22 @@
 {
   "$schema": "./loom.schema.json",
-  "project": {
+  "workspace": {
     "solution": "Loom.slnx",
-    "entryProject": "src/YourProject.csproj",
-    "velopackId": "Loom"
+    "artifactsPath": ".artifacts"
   },
-  "build": {
-    "rid": "win-x64",
-    "target": null,
-    "quick": null,
-    "distDirectory": "dist"
+  "artifacts": {
+    "Loom": {
+      "project": "src/YourProject.csproj",
+      "type": "Executable",
+      "rid": null,
+      "version": null,
+      "velopackId": null
+    }
   },
-  "nuget": {
-    "apiKey": ""
+  "run": {
+    "target": "Build",
+    "configuration": null,
+    "rid": null,
+    "version": null
   }
 }

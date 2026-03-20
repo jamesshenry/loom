@@ -8,13 +8,6 @@
         "minver"
       ],
       "rollForward": false
-    },
-    "loom.build": {
-      "version": "0.1.0-preview.0.6",
-      "commands": [
-        "loom"
-      ],
-      "rollForward": false
     }
   }
 }

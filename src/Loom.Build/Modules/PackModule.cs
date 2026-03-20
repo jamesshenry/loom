@@ -9,6 +9,16 @@ namespace Loom.Modules;
 [DependsOn<BuildModule>(Optional = true)]
 public class PackModule(LoomContext buildContext) : Module<List<File>>
 {
+    protected override ModuleConfiguration Configure() =>
+        ModuleConfiguration
+            .Create()
+            .WithSkipWhen(ctx =>
+                !buildContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Nuget)
+                    ? SkipDecision.Skip("No nuget artifacts defined in loom.json")
+                    : SkipDecision.DoNotSkip
+            )
+            .Build();
+
     protected override async Task<List<File>?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
@@ -18,28 +28,11 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
             .Artifacts.Where(a => a.Value.Type == ArtifactType.Nuget)
             .ToList();
 
-        if (nugetArtifacts.Count == 0)
-        {
-            context.Logger.LogInformation("No NuGet artifacts defined. Skipping pack.");
-            return [];
-        }
-
         var outputDir = Path.Combine(
             context.Environment.WorkingDirectory,
             buildContext.ArtifactsDirectory,
             "nuget"
         );
-
-        string globalVersion;
-        try
-        {
-            var versionModule = await context.GetModule<MinVerModule>();
-            globalVersion = versionModule.ValueOrDefault ?? buildContext.Version;
-        }
-        catch
-        {
-            globalVersion = buildContext.Version;
-        }
 
         foreach (var (artifactName, artifactSettings) in nugetArtifacts)
         {
@@ -48,8 +41,6 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
                 artifactName,
                 artifactSettings.Project
             );
-
-            var packVersion = artifactSettings.Version ?? globalVersion;
 
             await context
                 .DotNet()
@@ -60,8 +51,6 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
                         Configuration = buildContext.Configuration,
                         Output = outputDir,
                         NoBuild = true,
-                        IncludeSymbols = true,
-                        Properties = [new("Version", packVersion)],
                     },
                     cancellationToken: ct
                 );

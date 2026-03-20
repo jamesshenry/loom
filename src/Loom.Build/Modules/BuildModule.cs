@@ -2,8 +2,8 @@ using Loom.Config;
 
 namespace Loom.Modules;
 
+[ModuleCategory("Build")]
 [DependsOn<RestoreModule>(Optional = true)]
-[DependsOn<MinVerModule>]
 public class BuildModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {
@@ -14,8 +14,6 @@ public class BuildModule(LoomContext buildContext, IConfiguration configuration)
         CancellationToken ct
     )
     {
-        var version = await context.GetModule<MinVerModule>();
-
         return await context
             .DotNet()
             .Build(
@@ -24,7 +22,6 @@ public class BuildModule(LoomContext buildContext, IConfiguration configuration)
                     ProjectSolution = buildContext.Solution,
                     NoRestore = true,
                     Configuration = buildContext.Configuration,
-                    Properties = [new("Version", version.ValueOrDefault!)],
                 },
                 cancellationToken: ct
             );

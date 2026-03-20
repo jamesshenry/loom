@@ -1,12 +1,10 @@
 using System.Text.Json;
 using ConsoleAppFramework;
-using Loom;
 using Loom.Config;
 using ModularPipelines;
-using NJsonSchema;
-using NJsonSchema.Generation;
 using Spectre.Console;
-#pragma warning restore ConsoleUse // Use of Console detected
+
+namespace Loom;
 
 public class Commands
 {
@@ -50,6 +48,17 @@ public class Commands
         builder.Services.AddServices(context);
         builder.Options.PrintLogo = false;
         builder.Options.ShowProgressInConsole = true;
+        builder.Options.RunOnlyCategories = context.Target switch
+        {
+            BuildTarget.Build => ["Preparation", "Build"],
+            BuildTarget.Test => ["Preparation", "Build", "Test"],
+            BuildTarget.Publish => ["Preparation", "Packaging"],
+            BuildTarget.Release => ["Preparation", "Build", "Packaging"],
+            BuildTarget.NugetUpload => ["Preparation", "Build", "Packaging", "Delivery"],
+            BuildTarget.Clean => ["Preparation"],
+            BuildTarget.Restore => ["Preparation"],
+            _ => [],
+        };
 
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
@@ -128,4 +137,3 @@ public class Commands
         AnsiConsole.MarkupLine($"[green]Successfully initialized loom.json for {selectedSln}[/]");
     }
 }
-#pragma warning restore ConsoleUse // Use of Console detected

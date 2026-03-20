@@ -5,13 +5,11 @@
     <RootNamespace>Loom</RootNamespace>
     <ToolCommandName>loom</ToolCommandName>
     <PackageId>Loom.Build</PackageId>
-    <!-- <PublishAot>true</PublishAot> -->
-    <OptimizationPreference>Size</OptimizationPreference>
-    <StackTraceSupport>true</StackTraceSupport>
+    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;win-arm64;any</RuntimeIdentifiers>
+    <PublishSelfContained>false</PublishSelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
     <PackAsTool>true</PackAsTool>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Loom.Build.Tests" />
@@ -28,5 +26,8 @@
     <PackageReference Include="ModularPipelines.Git" />
     <PackageReference Include="NJsonSchema" />
     <PackageReference Include="NJsonSchema.NewtonsoftJson" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="loom.schema.json.example" CopyToOutputDirectory="PreserveNewest"></None>
   </ItemGroup>
 </Project>

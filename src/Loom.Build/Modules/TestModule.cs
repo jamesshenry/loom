@@ -2,7 +2,8 @@ using Loom.Config;
 
 namespace Loom.Modules;
 
-[DependsOn<BuildModule>]
+[ModuleCategory("Test")]
+[DependsOn<BuildModule>(Optional = true)]
 public class TestModule(LoomContext buildContext, IConfiguration configuration)
     : Module<CommandResult>
 {
