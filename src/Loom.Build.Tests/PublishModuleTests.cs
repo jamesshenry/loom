@@ -4,13 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModularPipelines;
 using ModularPipelines.Attributes;
-using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Extensions;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
-using ModularPipelines.Modules;
 using ModularPipelines.Options;
 using Moq;
 
@@ -135,7 +133,7 @@ public class PublishModuleTests
         );
     }
 
-    [Test]
+    [Test, WindowsOnly]
     public async Task ExecuteAsync_Throws_WhenRidIsNull()
     {
         var settings = new LoomSettings
