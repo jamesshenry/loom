@@ -28,27 +28,25 @@ public class NugetUploadModule(LoomContext loomContext, IEnumerable<File>? overr
         foreach (var package in packages)
         {
             var apiKey = loomContext.NugetApiKey;
-            if (string.IsNullOrEmpty(apiKey))
+            var nugetPushOptions = new DotNetNugetPushOptions
             {
-                continue;
-            }
-
+                Path = package.Path,
+                ApiKey = apiKey,
+                Source = "https://api.nuget.org/v3/index.json",
+                SkipDuplicate = true,
+            };
             if (IsDryRun)
             {
+                context.Logger.LogInformation(
+                    "Nuget options: {NugetPushOptions}",
+                    nugetPushOptions
+                );
                 continue;
             }
 
             var result = await context
                 .DotNet()
-                .Nuget.Push(
-                    new DotNetNugetPushOptions
-                    {
-                        Path = package.Path,
-                        Source = "https://api.nuget.org/v3/index.json",
-                        ApiKey = apiKey,
-                    },
-                    cancellationToken: cancellationToken
-                );
+                .Nuget.Push(nugetPushOptions, cancellationToken: cancellationToken);
 
             results.Add(result);
         }

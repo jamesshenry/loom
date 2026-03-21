@@ -19,4 +19,10 @@ public class LoomSettings
     public Dictionary<string, ArtifactSettings> Artifacts { get; set; } = [];
 
     public ExecutionOptions Run { get; set; } = new();
+    public NugetSettings Nuget { get; set; } = new();
+}
+
+public class NugetSettings
+{
+    public string ApiKey { get; init; } = string.Empty;
 }

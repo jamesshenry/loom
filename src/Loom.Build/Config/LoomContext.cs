@@ -25,7 +25,7 @@ public class LoomContext
         RequiresMinVer = true;
         RequiresVelopack = settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack);
 
-        NugetApiKey = Environment.GetEnvironmentVariable("LOOM_NUGET_APIKEY");
+        NugetApiKey = settings.Nuget.ApiKey;
     }
 
     public string Solution { get; }
@@ -41,7 +41,7 @@ public class LoomContext
     public bool RequiresMinVer { get; }
     public bool RequiresVelopack { get; }
 
-    public string? NugetApiKey { get; }
+    public string NugetApiKey { get; }
 
     private static string GetDefaultRid()
     {

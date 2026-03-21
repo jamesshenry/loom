@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ConsoleAppFramework;
 using Loom.Config;
+using Microsoft.Extensions.DependencyInjection;
 using ModularPipelines;
 using Spectre.Console;
 
@@ -32,12 +33,10 @@ public class Commands
             Environment.Exit(1);
         }
 
-        var (settings, config) = LoomConfig.Load(cliOptions);
-        var context = new LoomContext(settings);
-
         var builder = Pipeline.CreateBuilder();
-        builder.Configuration.AddConfiguration(config);
-        builder.Services.AddServices(context);
+        var context = builder.Services.AddLoomContext(loomPath, cliOptions);
+
+        builder.Services.AddModules();
         builder.Options.PrintLogo = false;
         builder.Options.ShowProgressInConsole = true;
         builder.Options.RunOnlyCategories = LoomConfig.GetPipelineCategories(context.Target);

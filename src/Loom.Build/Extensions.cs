@@ -25,9 +25,32 @@ public static class Extensions
     }
     extension(IServiceCollection services)
     {
-        internal IServiceCollection AddServices(LoomContext context)
+        internal LoomContext AddLoomContext(string loomJsonPath, ExecutionOptions runSettings)
         {
+            var configBuilder = new ConfigurationBuilder().SetBasePath(
+                Environment.CurrentDirectory
+            );
+            configBuilder.AddJsonFile(loomJsonPath, optional: false);
+
+            var config = configBuilder
+                .AddEnvironmentVariables()
+                .AddInMemoryCollection(runSettings.ToInMemoryCollection())
+                .Build();
+
+            var settings = new LoomSettings()
+            {
+                Nuget = new() { ApiKey = config.GetSection("Nuget:ApiKey").Value ?? string.Empty },
+            };
+            config.Bind(settings);
+            var context = new LoomContext(settings);
+            services.AddSingleton(settings);
             services.AddSingleton(context);
+
+            return context;
+        }
+
+        internal IServiceCollection AddModules()
+        {
             services.AddModule<RestoreModule>();
             services.AddModule<RestoreToolsModule>();
             services.AddModule<MinVerModule>();
@@ -42,4 +65,6 @@ public static class Extensions
             return services;
         }
     }
+
+    extension(IConfiguration configuration) { }
 }
