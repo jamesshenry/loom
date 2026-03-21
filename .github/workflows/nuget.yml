@@ -31,4 +31,4 @@ jobs:
         # Targets: Preparation -> Build -> Pack -> NugetUpload
         env:
           Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet loom --target NugetUpload
+        run: dotnet loom --target Release
