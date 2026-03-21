@@ -6,6 +6,7 @@ public class ExecutionOptions
     public string? Configuration { get; set; }
     public string? Rid { get; set; }
     public string? Version { get; set; }
+    public bool ForceLocalUpload { get; internal set; }
 
     public IEnumerable<KeyValuePair<string, string?>> ToInMemoryCollection()
     {

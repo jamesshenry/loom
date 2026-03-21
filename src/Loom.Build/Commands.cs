@@ -14,7 +14,8 @@ public class Commands
         CancellationToken ct,
         [HideDefaultValue] string? rid = null,
         [HideDefaultValue] string? version = null,
-        [HideDefaultValue] BuildTarget? target = null
+        [HideDefaultValue] BuildTarget? target = null,
+        [HideDefaultValue] bool forceLocalUpload = false // Add this
     )
     {
         var cliOptions = new ExecutionOptions
@@ -22,6 +23,7 @@ public class Commands
             Rid = rid,
             Version = version,
             Target = target ?? BuildTarget.Build,
+            ForceLocalUpload = forceLocalUpload, // Set it here
         };
 
         var loomPath = LoomConfig.ResolveLoomJsonPath();

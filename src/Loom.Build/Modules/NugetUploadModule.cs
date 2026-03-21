@@ -21,7 +21,7 @@ public class NugetUploadModule(LoomContext loomContext) : Module<CommandResult[]
                     : SkipDecision.DoNotSkip
             )
             .WithSkipWhen(ctx =>
-                ctx.IsRunningLocally()
+                ctx.IsRunningLocally() && !loomContext.ForceLocalUpload
                     ? SkipDecision.Skip("Should not be run locally.")
                     : SkipDecision.DoNotSkip
             )

@@ -27,6 +27,7 @@ public class LoomContext
 
         NugetApiKey = settings.Nuget.ApiKey;
         GitHubToken = settings.GithubAccessToken;
+        ForceLocalUpload = settings.Run.ForceLocalUpload;
     }
 
     public string Solution { get; }
@@ -44,6 +45,7 @@ public class LoomContext
 
     public string NugetApiKey { get; }
     public string GitHubToken { get; set; } = string.Empty;
+    public bool ForceLocalUpload { get; }
 
     private static string GetDefaultRid()
     {
