@@ -1,0 +1,16 @@
+{
+  "$schema": "./loom.schema.json",
+  "workspace": {
+    "solution": "Loom.slnx",
+    "artifactsPath": ".artifacts"
+  },
+  "artifacts": {
+    "Loom": {
+      "project": "src/Loom.Build/Loom.Build.csproj",
+      "type": "Nuget"
+    }
+  },
+  "run": {
+    "target": "Build"
+  }
+}
