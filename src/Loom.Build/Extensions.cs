@@ -34,13 +34,16 @@ public static class Extensions
 
             var config = configBuilder
                 .AddEnvironmentVariables()
+                .AddUserSecrets<Program>()
                 .AddInMemoryCollection(runSettings.ToInMemoryCollection())
                 .Build();
 
             var settings = new LoomSettings()
             {
                 Nuget = new() { ApiKey = config.GetSection("Nuget:ApiKey").Value ?? string.Empty },
+                GithubAccessToken = config.GetSection("GITHUB_TOKEN").Value ?? string.Empty,
             };
+
             config.Bind(settings);
             var context = new LoomContext(settings);
             services.AddSingleton(settings);
@@ -61,6 +64,7 @@ public static class Extensions
             services.AddModule<NugetUploadModule>();
             services.AddModule<CleanModule>();
             services.AddModule<BuildModule>();
+            services.AddModule<GitHubReleaseModule>();
 
             return services;
         }

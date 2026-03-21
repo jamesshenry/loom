@@ -40,7 +40,7 @@ public class PackModuleTests
         var settings = new LoomSettings
         {
             Workspace = new WorkspaceSettings { Solution = "test.sln" },
-            Run = new ExecutionOptions { Target = BuildTarget.NugetUpload },
+            Run = new ExecutionOptions { Target = BuildTarget.Release },
             Artifacts = new Dictionary<string, ArtifactSettings>
             {
                 ["MyPackage"] = new ArtifactSettings

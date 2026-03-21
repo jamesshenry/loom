@@ -12,6 +12,7 @@ public record PublishedArtifact(
 
 [ModuleCategory("Packaging")]
 [DependsOn<RestoreModule>(Optional = true)]
+[DependsOn<BuildModule>(Optional = true)]
 public class PublishModule(LoomContext buildContext) : Module<List<PublishedArtifact>>
 {
     protected override ModuleConfiguration Configure() =>

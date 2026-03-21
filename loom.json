@@ -18,5 +18,10 @@
     "configuration": null,
     "rid": null,
     "version": null
+  },
+  "ModularPipelines": {
+    "Secrets": {
+      "AccessToken": "your github access token"
+    }
   }
 }

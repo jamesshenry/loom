@@ -17,9 +17,8 @@ public static class LoomConfig
         {
             BuildTarget.Build => ["Preparation", "Build"],
             BuildTarget.Test => ["Preparation", "Build", "Test"],
-            BuildTarget.Publish => ["Preparation", "Packaging"],
-            BuildTarget.Release => ["Preparation", "Build", "Packaging"],
-            BuildTarget.NugetUpload => ["Preparation", "Build", "Packaging", "Delivery"],
+            BuildTarget.Publish => ["Preparation", "Build", "Packaging"],
+            BuildTarget.Release => ["Preparation", "Build", "Packaging", "Delivery"],
             BuildTarget.Clean => ["Preparation"],
             BuildTarget.Restore => ["Preparation"],
             _ => [],

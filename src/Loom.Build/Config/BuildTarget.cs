@@ -10,6 +10,5 @@ public enum BuildTarget
     Publish,
     Restore,
     Release,
-    NugetUpload,
     Clean,
 }

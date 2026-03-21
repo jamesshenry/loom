@@ -20,6 +20,7 @@ public class LoomSettings
 
     public ExecutionOptions Run { get; set; } = new();
     public NugetSettings Nuget { get; set; } = new();
+    public string GithubAccessToken { get; set; } = string.Empty;
 }
 
 public class NugetSettings

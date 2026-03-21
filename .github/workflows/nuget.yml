@@ -1,0 +1,34 @@
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+" # Stable: 1.2.3
+      - "[0-9]+.[0-9]+.[0-9]+-*" # Preview: 1.2.3-alpha.1
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release NuGet Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Run Loom NuGet Pipeline
+        # Targets: Preparation -> Build -> Pack -> NugetUpload
+        env:
+          Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet loom --target NugetUpload

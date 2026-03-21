@@ -6,7 +6,7 @@ namespace Loom.Modules;
 [DependsOn<PublishModule>]
 [DependsOn<MinVerModule>]
 [DependsOn<RestoreToolsModule>]
-public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandResult[]>
+public class VelopackReleaseModule(LoomContext loomContext) : Module<string[]>
 {
     protected override ModuleConfiguration Configure()
     {
@@ -14,14 +14,14 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
             .Create()
             .WithSkipWhen(ctx =>
             {
-                return !buildContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Velopack)
+                return !loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Velopack)
                     ? SkipDecision.Skip("No velopack artifacts defined in loom.json")
                     : SkipDecision.DoNotSkip;
             })
             .Build();
     }
 
-    protected override async Task<CommandResult[]?> ExecuteAsync(
+    protected override async Task<string[]?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
@@ -33,7 +33,7 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
         var publishedArtifacts = publishModule.ValueOrDefault ?? new();
 
         var root = context.Environment.WorkingDirectory;
-        var results = new List<CommandResult>();
+        var results = new List<string>();
 
         var velopackArtifacts = publishedArtifacts
             .Where(a => a.Type == ArtifactType.Velopack)
@@ -41,17 +41,16 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
 
         foreach (var artifact in velopackArtifacts)
         {
-            var artifactSettings = buildContext.Artifacts[artifact.ArtifactName];
+            var artifactSettings = loomContext.Artifacts[artifact.ArtifactName];
 
             var version = artifactSettings.Version ?? globalVersion;
             var packId = artifactSettings.VelopackId ?? artifact.ArtifactName;
-
             ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
 
             var publishDir = artifact.PublishDirectory.Path;
             var releaseDir = Path.Combine(
                 root,
-                buildContext.ArtifactsDirectory,
+                loomContext.ArtifactsDirectory,
                 "release",
                 artifact.ArtifactName,
                 artifact.Rid
@@ -89,7 +88,7 @@ public class VelopackReleaseModule(LoomContext buildContext) : Module<CommandRes
                 cancellationToken: ct
             );
 
-            results.Add(result);
+            results.Add(releaseDir);
         }
 
         return [.. results];

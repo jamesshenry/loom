@@ -58,7 +58,7 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
 
         var provider = context.Services.Get<IFileSystemProvider>();
 
-        return provider
+        var result = provider
             .EnumerateFiles(outputDir, "*", SearchOption.TopDirectoryOnly)
             .Where(f =>
                 f.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase)
@@ -66,5 +66,7 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
             )
             .Select(f => context.Files.GetFile(f))
             .ToList();
+
+        return result;
     }
 }

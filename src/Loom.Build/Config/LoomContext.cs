@@ -26,6 +26,7 @@ public class LoomContext
         RequiresVelopack = settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack);
 
         NugetApiKey = settings.Nuget.ApiKey;
+        GitHubToken = settings.GithubAccessToken;
     }
 
     public string Solution { get; }
@@ -42,6 +43,7 @@ public class LoomContext
     public bool RequiresVelopack { get; }
 
     public string NugetApiKey { get; }
+    public string GitHubToken { get; set; } = string.Empty;
 
     private static string GetDefaultRid()
     {
