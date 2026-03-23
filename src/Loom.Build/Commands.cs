@@ -14,8 +14,7 @@ public class Commands
         CancellationToken ct,
         [HideDefaultValue] string? rid = null,
         [HideDefaultValue] string? version = null,
-        [HideDefaultValue] BuildTarget? target = null,
-        [HideDefaultValue] bool forceLocalUpload = false // Add this
+        [HideDefaultValue] BuildTarget? target = null
     )
     {
         var cliOptions = new ExecutionOptions
@@ -23,7 +22,6 @@ public class Commands
             Rid = rid,
             Version = version,
             Target = target ?? BuildTarget.Build,
-            ForceLocalUpload = forceLocalUpload, // Set it here
         };
 
         var loomPath = LoomConfig.ResolveLoomJsonPath();
@@ -48,7 +46,7 @@ public class Commands
     }
 
     [Command("init")]
-    public async Task Init()
+    public async Task Init(bool force = false)
     {
         var currentDir = new DirectoryInfo(Environment.CurrentDirectory);
 
@@ -57,7 +55,7 @@ public class Commands
             var selectedSln = Setup.DiscoverSolution(currentDir);
             var selectedProj = Setup.DiscoverMainProject(currentDir);
 
-            await Setup.InitializeWorkspace(selectedSln, selectedProj);
+            await Setup.InitializeWorkspace(selectedSln, selectedProj, force);
 
             AnsiConsole.MarkupLine(
                 $"[green]Successfully initialized loom.json for {selectedSln} in .build/[/]"

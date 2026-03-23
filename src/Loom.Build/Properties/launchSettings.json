@@ -2,8 +2,8 @@
   "profiles": {
     "targets2": {
       "commandName": "Project",
-      "commandLineArgs": "--target Release",
-      "workingDirectory": "V:/source/personal/typical",
+      "commandLineArgs": "init --force",
+      "workingDirectory": "C:/source/personal/typical",
     }
   }
 }

@@ -9,4 +9,10 @@ public class WorkspaceSettings
     [Description("Path to the solution file.")]
     public string Solution { get; set; } = string.Empty;
     public string ArtifactsPath { get; set; } = ".artifacts";
+
+    [Description("Whether to upload NuGet packages during a release.")]
+    public bool EnableNugetUpload { get; set; } = false;
+
+    [Description("Whether to create a GitHub release during a release.")]
+    public bool EnableGithubRelease { get; set; } = false;
 }

@@ -16,6 +16,12 @@
     "run": {
       "$ref": "#/definitions/ExecutionOptions"
     },
+    "nuget": {
+      "$ref": "#/definitions/NugetSettings"
+    },
+    "githubAccessToken": {
+      "type": "string"
+    },
     "$schema": {
       "type": "string",
       "description": "The URL to the JSON schema for this file."
@@ -36,6 +42,14 @@
         },
         "artifactsPath": {
           "type": "string"
+        },
+        "enableNugetUpload": {
+          "type": "boolean",
+          "description": "Whether to upload NuGet packages during a release."
+        },
+        "enableGithubRelease": {
+          "type": "boolean",
+          "description": "Whether to create a GitHub release during a release."
         }
       }
     },
@@ -68,6 +82,9 @@
           "type": "string"
         },
         "velopackId": {
+          "type": "string"
+        },
+        "tagPrefix": {
           "type": "string"
         }
       }
@@ -113,7 +130,6 @@
         "Publish",
         "Restore",
         "Release",
-        "NugetUpload",
         "Clean"
       ],
       "enum": [
@@ -122,9 +138,17 @@
         "Publish",
         "Restore",
         "Release",
-        "NugetUpload",
         "Clean"
       ]
+    },
+    "NugetSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        }
+      }
     },
     "RuntimeIdentifier": {
       "type": "string",

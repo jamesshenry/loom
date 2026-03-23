@@ -13,6 +13,11 @@ public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>
         ModuleConfiguration
             .Create()
             .WithSkipWhen(_ =>
+                !loomContext.EnableGithubRelease
+                    ? SkipDecision.Skip("GitHub release disabled in workspace settings.")
+                    : SkipDecision.DoNotSkip
+            )
+            .WithSkipWhen(_ =>
                 string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_TOKEN"))
                 && string.IsNullOrWhiteSpace(loomContext.GitHubToken)
                     ? SkipDecision.Skip("No GitHub token provided.")

@@ -62,7 +62,8 @@ public static class Setup
         }
 
         var schemaJson = schema.ToJson();
-        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "loom.schema.json.example");
+        var repoRoot = Directory.GetRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
+        var path = Path.Combine(repoRoot, "src", "Loom.Build", "loom.schema.json.example");
         await File.WriteAllTextAsync(path, schemaJson);
     }
 
@@ -108,22 +109,28 @@ public static class Setup
             );
     }
 
-    public static async Task InitializeWorkspace(string selectedSln, string selectedProj)
+    public static async Task InitializeWorkspace(
+        string selectedSln,
+        string selectedProj,
+        bool force
+    )
     {
         var buildDir = Path.Combine(Environment.CurrentDirectory, ".build");
         if (!Directory.Exists(buildDir))
             Directory.CreateDirectory(buildDir);
 
-        var schemaFile = Path.Combine(
+        var schemaExampleFile = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory,
             "loom.schema.json.example"
         );
-        var destinationSchemaFile = Path.Combine(buildDir, "loom.schema.json");
 
-        if (File.Exists(schemaFile))
+        if (!File.Exists(schemaExampleFile))
         {
-            File.Copy(schemaFile, destinationSchemaFile, overwrite: true);
+            throw new Exception("Example schema file not found");
         }
+
+        var schemaJson = await File.ReadAllTextAsync(schemaExampleFile);
+        var destinationSchemaFile = Path.Combine(buildDir, "loom.schema.json");
 
         var loom = new LoomSettings
         {
@@ -147,6 +154,20 @@ public static class Setup
 """;
 
         var destinationLoomFile = Path.Combine(buildDir, "loom.json");
-        await File.WriteAllTextAsync(destinationLoomFile, finalJson);
+
+        if (force)
+        {
+            await File.WriteAllTextAsync(destinationSchemaFile, schemaJson);
+            await File.WriteAllTextAsync(destinationLoomFile, finalJson);
+            return;
+        }
+        if (!File.Exists(destinationSchemaFile))
+        {
+            await File.WriteAllTextAsync(destinationSchemaFile, schemaJson);
+        }
+        if (!File.Exists(destinationLoomFile))
+        {
+            await File.WriteAllTextAsync(destinationLoomFile, finalJson);
+        }
     }
 }

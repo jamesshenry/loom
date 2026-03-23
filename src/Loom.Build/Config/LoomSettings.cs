@@ -7,7 +7,8 @@ namespace Loom.Config;
     AllowTrailingCommas = true,
     UseStringEnumConverter = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    PropertyNameCaseInsensitive = true
+    PropertyNameCaseInsensitive = true,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 )]
 [JsonSerializable(typeof(LoomSettings))]
 public partial class LoomSettingsContext : JsonSerializerContext;
