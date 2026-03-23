@@ -2,14 +2,20 @@ namespace Loom.Modules;
 
 [ModuleCategory("Packaging")]
 [DependsOn<RestoreToolsModule>]
-public class MinVerModule : Module<string>
+public class MinVerModule(MinVerCache cache) : Module<string>
 {
-    protected override async Task<string?> ExecuteAsync(
+    protected override Task<string?> ExecuteAsync(IModuleContext context, CancellationToken ct) =>
+        cache
+            .GetOrAddAsync(null, () => RunMinVerAsync(context, null, ct))
+            .ContinueWith(t => (string?)t.Result, TaskContinuationOptions.ExecuteSynchronously);
+
+    internal static async Task<string> RunMinVerAsync(
         IModuleContext context,
+        string? tagPrefix,
         CancellationToken ct
     )
     {
-        var options = new MinverOptions() { };
+        var options = new MinverOptions(tagPrefix);
         context.Logger.LogDebug("Minver Options:\n {Options}", options);
         var result = await context.Shell.Command.ExecuteCommandLineTool(
             options: options,
@@ -17,8 +23,7 @@ public class MinVerModule : Module<string>
             cancellationToken: ct
         );
 
-        string version = result.StandardOutput.Trim();
-        context.Logger.LogDebug(version);
+        var version = result.StandardOutput.Trim();
         if (string.IsNullOrWhiteSpace(version))
         {
             throw new Exception(
@@ -26,7 +31,11 @@ public class MinVerModule : Module<string>
             );
         }
 
-        context.Logger.LogInformation("MinVer calculated version: {Version}", version);
+        context.Logger.LogInformation(
+            "MinVer calculated version (prefix: '{Prefix}'): {Version}",
+            tagPrefix ?? "(none)",
+            version
+        );
         return version;
     }
 }

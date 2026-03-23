@@ -51,6 +51,9 @@ public class PackModule(LoomContext buildContext) : Module<List<File>>
                         Configuration = buildContext.Configuration,
                         Output = outputDir,
                         NoBuild = true,
+                        Properties = string.IsNullOrWhiteSpace(artifactSettings.TagPrefix)
+                            ? null
+                            : [new("MinVerTagPrefix", artifactSettings.TagPrefix)],
                     },
                     cancellationToken: ct
                 );

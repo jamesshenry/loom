@@ -113,6 +113,59 @@ public class PackModuleTests
         var summary = await pipeline.RunAsync();
         await Assert.That(summary.Status).IsEqualTo(Status.Successful);
     }
+
+    [Test]
+    public async Task ExecuteAsync_PassesMinVerTagPrefix_WhenSet()
+    {
+        var settings = new LoomSettings
+        {
+            Workspace = new WorkspaceSettings { Solution = "test.sln" },
+            Run = new ExecutionOptions { Target = BuildTarget.Release },
+            Artifacts = new Dictionary<string, ArtifactSettings>
+            {
+                ["MyPackage"] = new ArtifactSettings
+                {
+                    Project = "test.csproj",
+                    Type = ArtifactType.Nuget,
+                    TagPrefix = "myapp/",
+                },
+            },
+        };
+        var ctx = new LoomContext(settings);
+
+        var builder = BuildPipeline(ctx: ctx);
+        await (await builder.BuildAsync()).RunAsync();
+
+        _mockDotNet.Verify(
+            x =>
+                x.Pack(
+                    It.Is<DotNetPackOptions>(o =>
+                        o.Properties != null
+                        && o.Properties.Any(p => p.Key == "MinVerTagPrefix" && p.Value == "myapp/")
+                    ),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task ExecuteAsync_DoesNotPassMinVerTagPrefix_WhenNotSet()
+    {
+        var builder = BuildPipeline();
+        await (await builder.BuildAsync()).RunAsync();
+
+        _mockDotNet.Verify(
+            x =>
+                x.Pack(
+                    It.Is<DotNetPackOptions>(o => o.Properties == null),
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
 }
 
 [ModuleCategory("Test")]

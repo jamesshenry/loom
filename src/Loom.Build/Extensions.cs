@@ -54,6 +54,7 @@ public static class Extensions
 
         internal IServiceCollection AddModules()
         {
+            services.AddSingleton<MinVerCache>();
             services.AddModule<RestoreModule>();
             services.AddModule<RestoreToolsModule>();
             services.AddModule<MinVerModule>();

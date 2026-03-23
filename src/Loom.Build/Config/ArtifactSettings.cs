@@ -19,4 +19,5 @@ public class ArtifactSettings
     public string? Version { get; set; }
 
     public string? VelopackId { get; set; }
+    public string? TagPrefix { get; set; }
 }

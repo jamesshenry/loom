@@ -2,11 +2,13 @@ using Loom.Config;
 
 namespace Loom.Modules;
 
+public record VelopackArtifactResult(string ArtifactName, string ReleaseDir, string Version);
+
 [ModuleCategory("Packaging")]
 [DependsOn<PublishModule>]
-[DependsOn<MinVerModule>]
 [DependsOn<RestoreToolsModule>]
-public class VelopackReleaseModule(LoomContext loomContext) : Module<string[]>
+public class VelopackReleaseModule(LoomContext loomContext, MinVerCache minVerCache)
+    : Module<List<VelopackArtifactResult>>
 {
     protected override ModuleConfiguration Configure()
     {
@@ -21,19 +23,16 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<string[]>
             .Build();
     }
 
-    protected override async Task<string[]?> ExecuteAsync(
+    protected override async Task<List<VelopackArtifactResult>?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
-        var versionModule = await context.GetModule<MinVerModule>();
-        var globalVersion = versionModule.ValueOrDefault;
-
         var publishModule = await context.GetModule<PublishModule>();
         var publishedArtifacts = publishModule.ValueOrDefault ?? new();
 
         var root = context.Environment.WorkingDirectory;
-        var results = new List<string>();
+        var results = new List<VelopackArtifactResult>();
 
         var velopackArtifacts = publishedArtifacts
             .Where(a => a.Type == ArtifactType.Velopack)
@@ -43,7 +42,13 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<string[]>
         {
             var artifactSettings = loomContext.Artifacts[artifact.ArtifactName];
 
-            var version = artifactSettings.Version ?? globalVersion;
+            var version = !string.IsNullOrWhiteSpace(artifactSettings.Version)
+                ? artifactSettings.Version
+                : await minVerCache.GetOrAddAsync(
+                    artifactSettings.TagPrefix,
+                    () => MinVerModule.RunMinVerAsync(context, artifactSettings.TagPrefix, ct)
+                );
+
             var packId = artifactSettings.VelopackId ?? artifact.ArtifactName;
             ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
 
@@ -66,7 +71,7 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<string[]>
                 ),
             };
 
-            var result = await context.Shell.Command.ExecuteCommandLineTool(
+            await context.Shell.Command.ExecuteCommandLineTool(
                 new VelopackOptions
                 {
                     Arguments =
@@ -88,9 +93,9 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<string[]>
                 cancellationToken: ct
             );
 
-            results.Add(releaseDir);
+            results.Add(new VelopackArtifactResult(artifact.ArtifactName, releaseDir, version));
         }
 
-        return [.. results];
+        return results;
     }
 }
