@@ -99,7 +99,7 @@ public class VelopackReleaseTests
             new(artifactName, new Folder(packDir), "win-x64", ArtifactType.Velopack),
         };
 
-        var mockVelopack = new Mock<IVelopack>();
+        var mockVelopack = new Mock<IVelopackPack>();
         VelopackBaseOptions? capturedOptions = null;
         mockVelopack
             .Setup(x =>

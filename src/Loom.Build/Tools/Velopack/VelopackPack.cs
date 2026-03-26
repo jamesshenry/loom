@@ -4,7 +4,7 @@ using ModularPipelines.Options;
 
 namespace Loom.Velopack;
 
-public class Velopack(ICommand command) : IVelopack
+public class VelopackPack(ICommand command) : IVelopackPack
 {
     public Task ExecuteAsync(
         VelopackBaseOptions options,

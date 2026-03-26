@@ -2,15 +2,22 @@
   "$schema": "./loom.schema.json",
   "workspace": {
     "solution": "Loom.slnx",
-    "artifactsPath": ".artifacts"
+    "artifactsPath": ".artifacts",
+    "cleanDirectories": [],
+    "enableNugetUpload": false,
+    "enableGithubRelease": false
   },
   "artifacts": {
     "Loom": {
-      "project": "src/Loom.Build/Loom.Build.csproj",
-      "type": "Nuget"
+      "project": "src/YourProject.csproj",
+      "type": "Executable"
     }
   },
   "run": {
     "target": "Build"
-  }
+  },
+  "nuget": {
+    "apiKey": ""
+  },
+  "githubAccessToken": ""
 }

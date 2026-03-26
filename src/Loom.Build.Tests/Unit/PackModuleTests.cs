@@ -55,7 +55,7 @@ public class FakeMinVerModule : MinVerModule
 
 public class PackModuleTests
 {
-    readonly LoomContext _loomContext = new()
+    private readonly LoomContext _loomContext = new()
     {
         Solution = "test.slnx",
         WorkingDirectory = "/test/working/directory",

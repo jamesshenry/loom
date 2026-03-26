@@ -3,7 +3,7 @@ using ModularPipelines.Options;
 
 namespace Loom.Velopack;
 
-public interface IVelopack
+public interface IVelopackPack
 {
     Task ExecuteAsync(
         VelopackBaseOptions options,

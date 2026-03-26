@@ -17,9 +17,9 @@ public static class VelopackExtensions
 
     public static void RegisterVelopackContext(this IServiceCollection services)
     {
-        services.TryAddScoped<IVelopack, Velopack>();
+        services.TryAddScoped<IVelopackPack, VelopackPack>();
     }
 
-    public static IVelopack Velopack(this IPipelineContext context) =>
-        context.Services.Get<IVelopack>();
+    public static IVelopackPack Velopack(this IPipelineContext context) =>
+        context.Services.Get<IVelopackPack>();
 }

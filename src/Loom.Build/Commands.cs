@@ -1,7 +1,6 @@
-using System.Text.Json;
+#pragma warning disable CA1822 // Mark members as static
 using ConsoleAppFramework;
 using Loom.Config;
-using Microsoft.Extensions.DependencyInjection;
 using ModularPipelines;
 using Spectre.Console;
 
