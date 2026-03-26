@@ -39,7 +39,7 @@ public class VelopackReleaseTests
         WorkingDirectory = WorkingDir,
         Solution = "test.sln",
         ArtifactsDirectory = ArtifactsDir,
-        RequiresVelopack = true,
+        EnableVelopack = true,
         Target = BuildTarget.Publish,
         Configuration = "Release",
         Rid = "win-x64",

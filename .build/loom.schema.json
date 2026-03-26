@@ -16,6 +16,12 @@
     "run": {
       "$ref": "#/definitions/ExecutionOptions"
     },
+    "nuget": {
+      "$ref": "#/definitions/NugetSettings"
+    },
+    "githubAccessToken": {
+      "type": "string"
+    },
     "$schema": {
       "type": "string",
       "description": "The URL to the JSON schema for this file."
@@ -36,6 +42,25 @@
         },
         "artifactsPath": {
           "type": "string"
+        },
+        "cleanDirectories": {
+          "type": "array",
+          "description": "Additional directories to clean during the Clean target.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enableNugetUpload": {
+          "type": "boolean",
+          "description": "Whether to upload NuGet packages during a release."
+        },
+        "enableGithubRelease": {
+          "type": "boolean",
+          "description": "Whether to create a GitHub release during a release."
+        },
+        "enableVeopackRelease": {
+          "type": "boolean",
+          "description": "Whether to create velopack packages during a release."
         }
       }
     },
@@ -68,6 +93,9 @@
           "type": "string"
         },
         "velopackId": {
+          "type": "string"
+        },
+        "tagPrefix": {
           "type": "string"
         }
       }
@@ -108,23 +136,30 @@
       "type": "string",
       "description": "",
       "x-enumNames": [
+        "Clean",
+        "Restore",
         "Build",
         "Test",
         "Publish",
-        "Restore",
-        "Release",
-        "NugetUpload",
-        "Clean"
+        "Release"
       ],
       "enum": [
+        "Clean",
+        "Restore",
         "Build",
         "Test",
         "Publish",
-        "Restore",
-        "Release",
-        "NugetUpload",
-        "Clean"
+        "Release"
       ]
+    },
+    "NugetSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        }
+      }
     },
     "RuntimeIdentifier": {
       "type": "string",

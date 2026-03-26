@@ -24,7 +24,7 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
         ModuleConfiguration
             .Create()
             .WithSkipWhen(ctx =>
-                !_loom.RequiresMinVer && !_loom.RequiresVelopack
+                !_loom.RequiresMinVer && !_loom.EnableVelopack
                     ? SkipDecision.Skip("No dotnet tools required for this build target")
                     : SkipDecision.DoNotSkip
             )
@@ -69,7 +69,7 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
                 );
         }
 
-        if (_loom.RequiresVelopack)
+        if (_loom.EnableVelopack)
         {
             await context
                 .DotNet()
