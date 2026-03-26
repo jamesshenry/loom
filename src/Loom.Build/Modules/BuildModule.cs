@@ -2,19 +2,21 @@ using Loom.Config;
 
 namespace Loom.Modules;
 
+public record BuildResult(string? Output);
+
 [ModuleCategory("Build")]
 [DependsOn<RestoreModule>(Optional = true)]
 public class BuildModule(LoomContext buildContext, IConfiguration configuration)
-    : Module<CommandResult>
+    : Module<BuildResult>
 {
     private readonly IConfiguration _configuration = configuration;
 
-    protected override async Task<CommandResult?> ExecuteAsync(
+    protected override async Task<BuildResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
-        return await context
+        var result = await context
             .DotNet()
             .Build(
                 new DotNetBuildOptions
@@ -23,7 +25,12 @@ public class BuildModule(LoomContext buildContext, IConfiguration configuration)
                     NoRestore = true,
                     Configuration = buildContext.Configuration,
                 },
+                executionOptions: new CommandExecutionOptions
+                {
+                    WorkingDirectory = buildContext.WorkingDirectory,
+                },
                 cancellationToken: ct
             );
+        return new BuildResult(result.StandardOutput);
     }
 }

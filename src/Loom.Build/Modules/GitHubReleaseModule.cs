@@ -9,27 +9,33 @@ namespace Loom.Modules;
 [DependsOn<VelopackReleaseModule>] // Wait for Velopack to finish creating assets
 public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>>
 {
-    protected override ModuleConfiguration Configure() =>
-        ModuleConfiguration
+    protected override ModuleConfiguration Configure()
+    {
+        return ModuleConfiguration
             .Create()
             .WithSkipWhen(_ =>
-                !loomContext.EnableGithubRelease
-                    ? SkipDecision.Skip("GitHub release disabled in workspace settings.")
-                    : SkipDecision.DoNotSkip
-            )
-            .WithSkipWhen(_ =>
-                string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_TOKEN"))
-                && string.IsNullOrWhiteSpace(loomContext.GitHubToken)
-                    ? SkipDecision.Skip("No GitHub token provided.")
-                    : SkipDecision.DoNotSkip
-            )
-            .WithSkipWhen(ctx =>
             {
-                return !loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Velopack)
-                    ? SkipDecision.Skip("No velopack artifacts defined in loom.json")
-                    : SkipDecision.DoNotSkip;
+                if (!loomContext.EnableGithubRelease)
+                {
+                    return SkipDecision.Skip("GitHub release disabled in workspace settings.");
+                }
+                else if (!loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Velopack))
+                {
+                    return SkipDecision.Skip("No velopack artifacts defined in loom.json");
+                }
+                else if (
+                    string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_TOKEN"))
+                    && string.IsNullOrWhiteSpace(loomContext.GitHubToken)
+                )
+                {
+                    return SkipDecision.Skip("No GitHub token provided.");
+                }
+                {
+                    return SkipDecision.DoNotSkip;
+                }
             })
             .Build();
+    }
 
     protected override async Task<List<Release>?> ExecuteAsync(
         IModuleContext context,

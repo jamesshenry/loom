@@ -8,6 +8,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>loom</AssemblyName>
     <RootNamespace>Loom</RootNamespace>
+    <InternalsVisibleTo>Loom.Build.Tests</InternalsVisibleTo>
   </PropertyGroup>
   <PropertyGroup>
     <PackageId>Loom.Build</PackageId>

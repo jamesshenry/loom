@@ -25,10 +25,14 @@ public static class Extensions
     }
     extension(IServiceCollection services)
     {
-        internal LoomContext AddLoomContext(string loomJsonPath, ExecutionOptions runSettings)
+        internal LoomContext AddLoomContext(
+            string loomJsonPath,
+            ExecutionOptions runSettings,
+            string? workingDirectory = null
+        )
         {
             var configBuilder = new ConfigurationBuilder().SetBasePath(
-                Environment.CurrentDirectory
+                Path.GetDirectoryName(loomJsonPath)!
             );
             configBuilder.AddJsonFile(loomJsonPath, optional: false);
 
@@ -45,7 +49,8 @@ public static class Extensions
             };
 
             config.Bind(settings);
-            var context = new LoomContext(settings);
+            workingDirectory ??= Environment.CurrentDirectory;
+            var context = new LoomContext(settings, workingDirectory);
             services.AddSingleton(settings);
             services.AddSingleton(context);
 
@@ -54,7 +59,6 @@ public static class Extensions
 
         internal IServiceCollection AddModules()
         {
-            services.AddSingleton<MinVerCache>();
             services.AddModule<RestoreModule>();
             services.AddModule<RestoreToolsModule>();
             services.AddModule<MinVerModule>();

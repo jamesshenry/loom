@@ -1,16 +1,21 @@
 namespace Loom.Config;
 
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 
-public class LoomContext
+public record LoomContext
 {
-    public LoomContext(LoomSettings settings)
+    public LoomContext() { }
+
+    public LoomContext(LoomSettings settings, string workingDirectory)
     {
         if (string.IsNullOrWhiteSpace(settings.Workspace.Solution))
             throw new ArgumentException("Workspace:Solution is required.");
 
+        WorkingDirectory = workingDirectory;
         Solution = settings.Workspace.Solution;
         ArtifactsDirectory = settings.Workspace.ArtifactsPath;
+        CleanDirectories = settings.Workspace.CleanDirectories;
 
         Target = settings.Run.Target;
         Version = settings.Run.Version ?? "1.0.0";
@@ -22,7 +27,7 @@ public class LoomContext
 
         Artifacts = settings.Artifacts.AsReadOnly();
 
-        RequiresMinVer = true;
+        RequiresMinVer = LoomConfig.GetPipelineCategories(Target).Contains("Packaging");
         RequiresVelopack = settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack);
 
         NugetApiKey = settings.Nuget.ApiKey;
@@ -31,23 +36,26 @@ public class LoomContext
         EnableGithubRelease = settings.Workspace.EnableGithubRelease;
     }
 
-    public string Solution { get; }
-    public string ArtifactsDirectory { get; }
+    public string WorkingDirectory { get; init; } = string.Empty;
+    public string Solution { get; init; } = string.Empty;
+    public string ArtifactsDirectory { get; init; } = ".artifacts";
+    public IReadOnlyList<string> CleanDirectories { get; init; } = ["dist"];
 
-    public IReadOnlyDictionary<string, ArtifactSettings> Artifacts { get; }
+    public IReadOnlyDictionary<string, ArtifactSettings> Artifacts { get; init; } =
+        ReadOnlyDictionary<string, ArtifactSettings>.Empty;
 
-    public BuildTarget Target { get; }
-    public string Configuration { get; }
-    public string Rid { get; }
-    public string Version { get; }
+    public BuildTarget Target { get; init; } = BuildTarget.Build;
+    public string Configuration { get; init; } = "Release";
+    public string Rid { get; init; } = "win-x64";
+    public string? Version { get; init; }
 
-    public bool RequiresMinVer { get; }
-    public bool RequiresVelopack { get; }
+    public bool RequiresMinVer { get; init; } = true;
+    public bool RequiresVelopack { get; init; } = false;
 
-    public string NugetApiKey { get; }
-    public string GitHubToken { get; set; } = string.Empty;
-    public bool EnableNugetUpload { get; }
-    public bool EnableGithubRelease { get; }
+    public string? NugetApiKey { get; init; }
+    public string? GitHubToken { get; init; }
+    public bool EnableNugetUpload { get; init; } = false;
+    public bool EnableGithubRelease { get; init; } = false;
 
     private static string GetDefaultRid()
     {

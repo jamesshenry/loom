@@ -2,14 +2,16 @@ using Loom.Config;
 
 namespace Loom.Modules;
 
+public record RestoreResult(CommandResult CommandResult);
+
 [ModuleCategory("Preparation")]
 [DependsOn<RestoreToolsModule>(Optional = true)]
 public class RestoreModule(LoomContext buildContext, IConfiguration configuration)
-    : Module<CommandResult>
+    : Module<RestoreResult>
 {
     private readonly IConfiguration _configuration = configuration;
 
-    protected override async Task<CommandResult?> ExecuteAsync(
+    protected override async Task<RestoreResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
@@ -23,9 +25,13 @@ public class RestoreModule(LoomContext buildContext, IConfiguration configuratio
                     ProjectSolution = buildContext.Solution,
                     Runtime = buildContext.Rid,
                 },
-                executionOptions: new CommandExecutionOptions() { ThrowOnNonZeroExitCode = true },
+                executionOptions: new CommandExecutionOptions
+                {
+                    WorkingDirectory = buildContext.WorkingDirectory,
+                    ThrowOnNonZeroExitCode = true,
+                },
                 cancellationToken: ct
             );
-        return result;
+        return new RestoreResult(result);
     }
 }

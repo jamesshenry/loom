@@ -8,8 +8,10 @@ using ModularPipelines.Modules;
 
 namespace Loom.Modules;
 
+public record RestoreToolsResult(CommandResult CommandResult);
+
 [ModuleCategory("Preparation")]
-public class RestoreToolsModule : Module<CommandResult>
+public class RestoreToolsModule : Module<RestoreToolsResult>
 {
     private readonly LoomContext _loom;
 
@@ -18,17 +20,23 @@ public class RestoreToolsModule : Module<CommandResult>
         _loom = loom;
     }
 
-    protected override async Task<CommandResult?> ExecuteAsync(
+    protected override ModuleConfiguration Configure() =>
+        ModuleConfiguration
+            .Create()
+            .WithSkipWhen(ctx =>
+                !_loom.RequiresMinVer && !_loom.RequiresVelopack
+                    ? SkipDecision.Skip("No dotnet tools required for this build target")
+                    : SkipDecision.DoNotSkip
+            )
+            .Build();
+
+    protected override async Task<RestoreToolsResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
-        var rootManifest = Path.Combine(context.Environment.WorkingDirectory, "dotnet-tools.json");
-        var configManifest = Path.Combine(
-            context.Environment.WorkingDirectory,
-            ".config",
-            "dotnet-tools.json"
-        );
+        var rootManifest = Path.Combine(_loom.WorkingDirectory, "dotnet-tools.json");
+        var configManifest = Path.Combine(_loom.WorkingDirectory, ".config", "dotnet-tools.json");
 
         var manifestExists = File.Exists(rootManifest) || File.Exists(configManifest);
 
@@ -38,49 +46,55 @@ public class RestoreToolsModule : Module<CommandResult>
             await context
                 .DotNet()
                 .New.Execute(
-                    new DotNetNewOptions() { Arguments = ["tool-manifest"] },
+                    new DotNetNewOptions() { Arguments = ["tool-manifest", "--force"] },
+                    executionOptions: new CommandExecutionOptions
+                    {
+                        WorkingDirectory = _loom.WorkingDirectory,
+                    },
                     cancellationToken: ct
                 );
         }
 
         if (_loom.RequiresMinVer)
         {
-            await EnsureToolInstalled(context, "minver-cli", ct);
+            await context
+                .DotNet()
+                .Tool.Execute(
+                    new DotNetToolOptions() { Arguments = ["install", "minver-cli"] },
+                    executionOptions: new CommandExecutionOptions
+                    {
+                        WorkingDirectory = _loom.WorkingDirectory,
+                    },
+                    cancellationToken: ct
+                );
         }
 
         if (_loom.RequiresVelopack)
         {
-            await EnsureToolInstalled(context, "vpk", ct);
-        }
-
-        context.Logger.LogInformation("Restoring dotnet local tools...");
-        return await context
-            .DotNet()
-            .Tool.Restore(new DotNetToolRestoreOptions(), cancellationToken: ct);
-    }
-
-    private async Task EnsureToolInstalled(
-        IModuleContext context,
-        string toolId,
-        CancellationToken ct
-    )
-    {
-        var listResult = await context
-            .DotNet()
-            .Tool.Execute(new DotNetToolOptions() { Arguments = ["list"] }, cancellationToken: ct);
-
-        if (!listResult.StandardOutput.Contains(toolId, StringComparison.OrdinalIgnoreCase))
-        {
-            context.Logger.LogInformation(
-                "Tool {ToolId} not found in manifest. Installing...",
-                toolId
-            );
             await context
                 .DotNet()
                 .Tool.Execute(
-                    new DotNetToolOptions() { Arguments = ["install", toolId] },
+                    new DotNetToolOptions() { Arguments = ["install", "vpk"] },
+                    executionOptions: new CommandExecutionOptions
+                    {
+                        WorkingDirectory = _loom.WorkingDirectory,
+                    },
                     cancellationToken: ct
                 );
         }
+
+        context.Logger.LogInformation("Restoring dotnet local tools...");
+        var result = await context
+            .DotNet()
+            .Tool.Restore(
+                new DotNetToolRestoreOptions(),
+                executionOptions: new CommandExecutionOptions
+                {
+                    WorkingDirectory = _loom.WorkingDirectory,
+                },
+                cancellationToken: ct
+            );
+
+        return new RestoreToolsResult(result);
     }
 }

@@ -1,32 +1,80 @@
 using Loom.Config;
+using ModularPipelines.DotNet.Options;
 
 namespace Loom.Modules;
 
-[ModuleCategory("Preparation")]
-public class CleanModule(LoomContext loomContext) : Module<bool>
+public record CleanResult(
+    bool Success,
+    string ArtifactsDirectory,
+    bool DirectoryExisted,
+    long? BytesDeleted
+);
+
+[ModuleCategory("Clean")]
+public class CleanModule(LoomContext loomContext) : Module<CleanResult>
 {
-    protected override async Task<bool> ExecuteAsync(IModuleContext context, CancellationToken ct)
+    protected override async Task<CleanResult?> ExecuteAsync(
+        IModuleContext context,
+        CancellationToken ct
+    )
     {
-        var dir = await context
-            .Git()
-            .Commands.RevParse(new GitRevParseOptions() { ShowToplevel = true }, token: ct);
+        // 1. MSBuild clean target
+        context.Logger.LogInformation(
+            "Executing MSBuild Clean target for {Solution}",
+            loomContext.Solution
+        );
+        await context
+            .DotNet()
+            .Clean(
+                new DotNetCleanOptions { ProjectSolution = loomContext.Solution },
+                executionOptions: new CommandExecutionOptions
+                {
+                    WorkingDirectory = loomContext.WorkingDirectory,
+                },
+                cancellationToken: ct
+            );
 
-        var repoRoot = dir.StandardOutput.Trim();
-        context.Logger.LogInformation("Repo Root: {Directory}", repoRoot);
+        // 2. Clear known custom directories
+        var deletionQueue = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var artifacts = context.Files.GetFolder(Path.Combine(repoRoot, ".artifacts"));
-        if (artifacts.Exists)
+        // Add artifacts dir
+        deletionQueue.Add(
+            Path.GetFullPath(
+                Path.Combine(loomContext.WorkingDirectory, loomContext.ArtifactsDirectory)
+            )
+        );
+
+        // Add configured clean directories
+        foreach (var dir in loomContext.CleanDirectories)
         {
-            await artifacts.DeleteAsync(ct);
+            deletionQueue.Add(Path.GetFullPath(Path.Combine(loomContext.WorkingDirectory, dir)));
         }
-        context.Logger.LogInformation("{artifacts} folder deleted.", artifacts);
-        var dist = context.Files.GetFolder(Path.Combine(repoRoot, loomContext.ArtifactsDirectory));
-        if (dist.Exists)
-        {
-            await dist.DeleteAsync(ct);
-        }
-        context.Logger.LogInformation("{dist} folder deleted.", dist);
 
-        return true;
+        var artifactsRoot = context.Files.GetFolder(
+            Path.Combine(loomContext.WorkingDirectory, loomContext.ArtifactsDirectory)
+        );
+        var existed = artifactsRoot.Exists;
+        long? bytesDeleted = existed ? artifactsRoot.GetFiles(x => true).Sum(f => f.Length) : null;
+
+        var orderedQueue = deletionQueue.OrderBy(x => x.Length).ToList(); // Sort so parents delete before children
+
+        foreach (var path in orderedQueue)
+        {
+            var folder = context.Files.GetFolder(path);
+            if (folder.Exists)
+            {
+                context.Logger.LogInformation("Deleting clean directory: {Path}", path);
+                await folder.DeleteAsync(ct);
+            }
+        }
+
+        context.Logger.LogInformation(
+            "{artifacts} artifacts folder evaluated (Existed: {Existed}, Bytes: {Bytes}).",
+            artifactsRoot,
+            existed,
+            bytesDeleted
+        );
+
+        return new CleanResult(true, loomContext.ArtifactsDirectory, existed, bytesDeleted);
     }
 }

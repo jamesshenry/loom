@@ -1,41 +1,83 @@
+using System.Collections.Concurrent;
+using Loom.Config;
+using Loom.MinVer;
+using Loom.MinVer.Options;
+
 namespace Loom.Modules;
 
-[ModuleCategory("Packaging")]
-[DependsOn<RestoreToolsModule>]
-public class MinVerModule(MinVerCache cache) : Module<string>
+public record MinVerResult(IReadOnlyDictionary<string, MinVerVersion> Versions)
 {
-    protected override Task<string?> ExecuteAsync(IModuleContext context, CancellationToken ct) =>
-        cache
-            .GetOrAddAsync(null, () => RunMinVerAsync(context, null, ct))
-            .ContinueWith(t => (string?)t.Result, TaskContinuationOptions.ExecuteSynchronously);
+    public MinVerVersion GetVersion(string? tagPrefix) =>
+        Versions.GetValueOrDefault(tagPrefix ?? string.Empty, MinVerVersion.V1);
+}
 
-    internal static async Task<string> RunMinVerAsync(
+[ModuleCategory("Packaging")]
+[DependsOn<RestoreToolsModule>(Optional = true)]
+public class MinVerModule(LoomContext loomContext) : Module<MinVerResult>
+{
+    protected override async Task<MinVerResult?> ExecuteAsync(
         IModuleContext context,
-        string? tagPrefix,
         CancellationToken ct
     )
     {
-        var options = new MinverOptions(tagPrefix);
-        context.Logger.LogDebug("Minver Options:\n {Options}", options);
-        var result = await context.Shell.Command.ExecuteCommandLineTool(
-            options: options,
-            executionOptions: new CommandExecutionOptions { ThrowOnNonZeroExitCode = true },
-            cancellationToken: ct
-        );
+        var prefixes = loomContext
+            .Artifacts.Values.Select(a => a.TagPrefix ?? string.Empty)
+            .Distinct()
+            .ToList();
 
-        var version = result.StandardOutput.Trim();
-        if (string.IsNullOrWhiteSpace(version))
+        if (!prefixes.Contains(string.Empty))
         {
-            throw new Exception(
-                "MinVer output was empty. Check if Git is initialized and tags exist."
-            );
+            prefixes.Add(string.Empty);
         }
 
-        context.Logger.LogInformation(
-            "MinVer calculated version (prefix: '{Prefix}'): {Version}",
-            tagPrefix ?? "(none)",
-            version
+        var results = new ConcurrentDictionary<string, MinVerVersion>();
+
+        await Task.WhenAll(
+            prefixes.Select(async prefix =>
+            {
+                var tagPrefix = string.IsNullOrEmpty(prefix) ? null : prefix;
+                var options = new DotNetMinVerOptions() { TagPrefix = tagPrefix };
+                var version = await context.MinVer().Run(options);
+
+                results[prefix] = version;
+            })
         );
-        return version;
+
+        return new MinVerResult(results);
     }
+
+    // private static async Task<string> RunMinVerAsync(
+    //     IModuleContext context,
+    //     string? tagPrefix,
+    //     string workingDirectory,
+    //     CancellationToken ct
+    // )
+    // {
+    //     var options = new MinVerOptions();
+    //     context.Logger.LogDebug("Minver Options:\n {Options}", options);
+    //     var result = await context.Shell.Command.ExecuteCommandLineTool(
+    //         options: options,
+    //         executionOptions: new CommandExecutionOptions
+    //         {
+    //             ThrowOnNonZeroExitCode = true,
+    //             WorkingDirectory = workingDirectory,
+    //         },
+    //         cancellationToken: ct
+    //     );
+
+    //     var version = result.StandardOutput.Trim();
+    //     if (string.IsNullOrWhiteSpace(version))
+    //     {
+    //         throw new Exception(
+    //             "MinVer output was empty. Check if Git is initialized and tags exist."
+    //         );
+    //     }
+
+    //     context.Logger.LogInformation(
+    //         "MinVer calculated version (prefix: '{Prefix}'): {Version}",
+    //         tagPrefix ?? "(none)",
+    //         version
+    //     );
+    //     return version;
+    // }
 }

@@ -43,6 +43,13 @@
         "artifactsPath": {
           "type": "string"
         },
+        "cleanDirectories": {
+          "type": "array",
+          "description": "Additional directories to clean during the Clean target.",
+          "items": {
+            "type": "string"
+          }
+        },
         "enableNugetUpload": {
           "type": "boolean",
           "description": "Whether to upload NuGet packages during a release."
@@ -125,20 +132,20 @@
       "type": "string",
       "description": "",
       "x-enumNames": [
+        "Clean",
+        "Restore",
         "Build",
         "Test",
         "Publish",
-        "Restore",
-        "Release",
-        "Clean"
+        "Release"
       ],
       "enum": [
+        "Clean",
+        "Restore",
         "Build",
         "Test",
         "Publish",
-        "Restore",
-        "Release",
-        "Clean"
+        "Release"
       ]
     },
     "NugetSettings": {

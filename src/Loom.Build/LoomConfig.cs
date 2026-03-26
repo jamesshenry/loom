@@ -15,12 +15,12 @@ public static class LoomConfig
     public static string[] GetPipelineCategories(BuildTarget target) =>
         target switch
         {
+            BuildTarget.Clean => ["Clean"],
+            BuildTarget.Restore => ["Preparation"],
             BuildTarget.Build => ["Preparation", "Build"],
             BuildTarget.Test => ["Preparation", "Build", "Test"],
             BuildTarget.Publish => ["Preparation", "Build", "Packaging"],
             BuildTarget.Release => ["Preparation", "Build", "Packaging", "Delivery"],
-            BuildTarget.Clean => ["Preparation"],
-            BuildTarget.Restore => ["Preparation"],
             _ => [],
         };
 }

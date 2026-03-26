@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="HelloApp/HelloApp.csproj" />
+  <Project Path="HelloApp.Tests/HelloApp.Tests.csproj" />
+  <Project Path="HelloNuget/HelloNuget.csproj" />
+  <Project Path="HelloNugetPrefixed/HelloNugetPrefixed.csproj" />
+</Solution>

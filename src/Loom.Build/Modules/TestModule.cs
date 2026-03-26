@@ -1,27 +1,44 @@
+using System.Text.Json.Nodes;
 using Loom.Config;
 
 namespace Loom.Modules;
 
+public record TestResult(CommandResult? Result, string CoverageFilePath);
+
 [ModuleCategory("Test")]
 [DependsOn<BuildModule>(Optional = true)]
-public class TestModule(LoomContext buildContext, IConfiguration configuration)
-    : Module<CommandResult>
+public class TestModule(LoomContext buildContext, IConfiguration configuration) : Module<TestResult>
 {
     private readonly IConfiguration _configuration = configuration;
 
-    protected override async Task<CommandResult?> ExecuteAsync(
+    protected override async Task<TestResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
-        var testResultsDir = Path.Combine(context.Environment.WorkingDirectory, "TestResults");
+        var globalJsonPath = Path.Combine(buildContext.WorkingDirectory, "global.json");
+        var globalJsonFile = context.Files.GetFile(globalJsonPath);
+
+        if (!globalJsonFile.Exists)
+            throw new InvalidOperationException(
+                "global.json not found. Add a global.json with test.runner set to \"Microsoft.Testing.Platform\" to use the Test target."
+            );
+
+        var content = await globalJsonFile.ReadAsync();
+        ValidateMicrosoftTestingPlatform(content);
+
+        var testResultsDir = Path.Combine(buildContext.WorkingDirectory, "TestResults");
         var coverageFilePath = Path.Combine(testResultsDir, "coverage.xml");
 
-        Directory.CreateDirectory(testResultsDir);
+        var testResultsFolder = context.Files.GetFolder(testResultsDir);
+        if (!testResultsFolder.Exists)
+        {
+            testResultsFolder.Create();
+        }
 
         context.Logger.LogInformation("Running tests for {Solution}", buildContext.Solution);
 
-        return await context
+        var result = await context
             .DotNet()
             .Test(
                 new DotNetTestOptions
@@ -40,7 +57,25 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration)
                         "8",
                     ],
                 },
+                executionOptions: new CommandExecutionOptions
+                {
+                    WorkingDirectory = buildContext.WorkingDirectory,
+                },
                 cancellationToken: ct
+            );
+        return new TestResult(result, coverageFilePath);
+    }
+
+    internal static void ValidateMicrosoftTestingPlatform(string globalJsonContent)
+    {
+        var root = JsonNode.Parse(globalJsonContent);
+        var runner = root?["test"]?["runner"]?.GetValue<string>();
+
+        if (
+            !string.Equals(runner, "Microsoft.Testing.Platform", StringComparison.OrdinalIgnoreCase)
+        )
+            throw new InvalidOperationException(
+                $"global.json test.runner is \"{runner ?? "(not set)"}\". Set it to \"Microsoft.Testing.Platform\" to use the Test target."
             );
     }
 }

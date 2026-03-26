@@ -3,9 +3,11 @@ using File = ModularPipelines.FileSystem.File;
 
 namespace Loom.Modules;
 
+public record NugetUploadResult(CommandResult[] Results);
+
 [ModuleCategory("Delivery")]
-[DependsOn<PackModule>]
-public class NugetUploadModule(LoomContext loomContext) : Module<CommandResult[]>
+[DependsOn<PackModule>(Optional = true)]
+public class NugetUploadModule(LoomContext loomContext) : Module<NugetUploadResult>
 {
     public NugetUploadModule(LoomContext loomContext, IEnumerable<File>? overridePackages = null)
         : this(loomContext) { }
@@ -16,29 +18,28 @@ public class NugetUploadModule(LoomContext loomContext) : Module<CommandResult[]
         ModuleConfiguration
             .Create()
             .WithSkipWhen(ctx =>
-                !loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Nuget)
-                    ? SkipDecision.Skip("No nuget artifacts defined in loom.json")
-                    : SkipDecision.DoNotSkip
-            )
-            .WithSkipWhen(ctx =>
-                !loomContext.EnableNugetUpload
-                    ? SkipDecision.Skip("NuGet upload disabled in workspace settings.")
-                    : SkipDecision.DoNotSkip
-            )
-            .WithSkipWhen(ctx =>
-                ctx.IsRunningLocally()
-                    ? SkipDecision.Skip("Should not be run locally.")
-                    : SkipDecision.DoNotSkip
-            )
+            {
+                if (!loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Nuget))
+                    return SkipDecision.Skip("No nuget artifacts defined in loom.json");
+                if (!loomContext.EnableNugetUpload)
+                    return SkipDecision.Skip("NuGet upload disabled in workspace settings.");
+                if (
+                    Environment.GetEnvironmentVariable("LOOM_IGNORE_LOCAL_CHECK") != "true"
+                    && ctx.IsRunningLocally()
+                )
+                    return SkipDecision.Skip("Should not be run locally.");
+                return SkipDecision.DoNotSkip;
+            })
             .Build();
 
-    protected override async Task<CommandResult[]?> ExecuteAsync(
+    protected override async Task<NugetUploadResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken cancellationToken
     )
     {
         var packModule = await context.GetModule<PackModule>();
-        var packages = packModule.ValueOrDefault ?? [];
+
+        var packages = packModule.ValueOrDefault?.Artifacts ?? [];
 
         var results = new List<CommandResult>();
         foreach (var package in packages)
@@ -66,6 +67,6 @@ public class NugetUploadModule(LoomContext loomContext) : Module<CommandResult[]
             results.Add(result);
         }
 
-        return [.. results];
+        return new NugetUploadResult([.. results]);
     }
 }

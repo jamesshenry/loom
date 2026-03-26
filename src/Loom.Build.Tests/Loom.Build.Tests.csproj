@@ -5,13 +5,21 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
-
+  <ItemGroup>
+    <Compile Remove="Fixtures\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Moq" />
     <PackageReference Include="TUnit" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Loom.Build\Loom.Build.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource
+      Include="$(MSBuildProjectDirectory)\fixtures.bundle"
+      LogicalName="fixtures.bundle"
+      Condition="Exists('$(MSBuildProjectDirectory)\fixtures.bundle')"
+    />
   </ItemGroup>
 </Project>

@@ -10,10 +10,12 @@ public record PublishedArtifact(
     ArtifactType Type
 );
 
+public record PublishResult(List<PublishedArtifact> Artifacts);
+
 [ModuleCategory("Packaging")]
 [DependsOn<RestoreModule>(Optional = true)]
 [DependsOn<BuildModule>(Optional = true)]
-public class PublishModule(LoomContext buildContext) : Module<List<PublishedArtifact>>
+public class PublishModule(LoomContext buildContext) : Module<PublishResult>
 {
     protected override ModuleConfiguration Configure() =>
         ModuleConfiguration
@@ -27,7 +29,7 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
             )
             .Build();
 
-    protected override async Task<List<PublishedArtifact>?> ExecuteAsync(
+    protected override async Task<PublishResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
@@ -46,7 +48,7 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
             ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
 
             var publishDirPath = Path.Combine(
-                context.Environment.WorkingDirectory,
+                buildContext.WorkingDirectory,
                 buildContext.ArtifactsDirectory,
                 "publish",
                 artifactName,
@@ -83,6 +85,10 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
                         Runtime = rid,
                         NoRestore = true,
                     },
+                    executionOptions: new CommandExecutionOptions
+                    {
+                        WorkingDirectory = buildContext.WorkingDirectory,
+                    },
                     cancellationToken: ct
                 );
 
@@ -96,6 +102,6 @@ public class PublishModule(LoomContext buildContext) : Module<List<PublishedArti
             );
         }
 
-        return results;
+        return new PublishResult(results);
     }
 }

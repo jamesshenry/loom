@@ -1,14 +1,17 @@
 using Loom.Config;
+using Loom.MinVer;
+using Loom.Velopack;
+using Loom.Velopack.Options;
 
 namespace Loom.Modules;
 
 public record VelopackArtifactResult(string ArtifactName, string ReleaseDir, string Version);
 
 [ModuleCategory("Packaging")]
-[DependsOn<PublishModule>]
-[DependsOn<RestoreToolsModule>]
-public class VelopackReleaseModule(LoomContext loomContext, MinVerCache minVerCache)
-    : Module<List<VelopackArtifactResult>>
+[DependsOn<PublishModule>(Optional = true)]
+[DependsOn<MinVerModule>(Optional = true)]
+[DependsOn<RestoreToolsModule>(Optional = true)]
+public class VelopackReleaseModule(LoomContext loomContext) : Module<List<VelopackArtifactResult>>
 {
     protected override ModuleConfiguration Configure()
     {
@@ -29,9 +32,13 @@ public class VelopackReleaseModule(LoomContext loomContext, MinVerCache minVerCa
     )
     {
         var publishModule = await context.GetModule<PublishModule>();
-        var publishedArtifacts = publishModule.ValueOrDefault ?? new();
+        var publishedArtifactsInfo = publishModule.ValueOrDefault;
+        var publishedArtifacts = publishedArtifactsInfo?.Artifacts ?? [];
 
-        var root = context.Environment.WorkingDirectory;
+        var minVerModule = await context.GetModule<MinVerModule>();
+        var minVerResult = minVerModule.ValueOrDefault;
+
+        var root = loomContext.WorkingDirectory;
         var results = new List<VelopackArtifactResult>();
 
         var velopackArtifacts = publishedArtifacts
@@ -43,14 +50,11 @@ public class VelopackReleaseModule(LoomContext loomContext, MinVerCache minVerCa
             var artifactSettings = loomContext.Artifacts[artifact.ArtifactName];
 
             var version = !string.IsNullOrWhiteSpace(artifactSettings.Version)
-                ? artifactSettings.Version
-                : await minVerCache.GetOrAddAsync(
-                    artifactSettings.TagPrefix,
-                    () => MinVerModule.RunMinVerAsync(context, artifactSettings.TagPrefix, ct)
-                );
+                ? MinVerVersion.From(artifactSettings.Version)
+                : minVerResult?.GetVersion(artifactSettings.TagPrefix);
 
             var packId = artifactSettings.VelopackId ?? artifact.ArtifactName;
-            ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
+            ArgumentNullException.ThrowIfNull(version, nameof(version));
 
             var publishDir = artifact.PublishDirectory.Path;
             var releaseDir = Path.Combine(
@@ -71,29 +75,27 @@ public class VelopackReleaseModule(LoomContext loomContext, MinVerCache minVerCa
                 ),
             };
 
-            await context.Shell.Command.ExecuteCommandLineTool(
-                new VelopackOptions
-                {
-                    Arguments =
-                    [
-                        "vpk",
-                        directive,
-                        "pack",
-                        "--packId",
-                        packId,
-                        "--packVersion",
-                        version,
-                        "--packDir",
-                        publishDir,
-                        "--outputDir",
-                        releaseDir,
-                        "--yes",
-                    ],
-                },
-                cancellationToken: ct
-            );
+            await context
+                .Velopack()
+                .ExecuteAsync(
+                    new DotNetVelopackOptions
+                    {
+                        PackId = packId,
+                        PackVersion = version.ToString(),
+                        PackDir = publishDir,
+                        OutputDir = releaseDir,
+                        Channel = directive.Trim('[', ']'),
+                    },
+                    executionOptions: new CommandExecutionOptions
+                    {
+                        WorkingDirectory = loomContext.WorkingDirectory,
+                    },
+                    ct: ct
+                );
 
-            results.Add(new VelopackArtifactResult(artifact.ArtifactName, releaseDir, version));
+            results.Add(
+                new VelopackArtifactResult(artifact.ArtifactName, releaseDir, version.ToString())
+            );
         }
 
         return results;

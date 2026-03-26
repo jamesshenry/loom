@@ -3,6 +3,8 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+src/Loom.Build.Tests/.fixture-staging/
+
 # dotenv files
 .env
 
