@@ -19,3 +19,8 @@ Add a `--clean` flag so consumers can opt-in to a clean before any build target,
   ```
 
 **Usage:** `loom build --clean`, `loom publish --clean`, etc.
+
+## `init` command should also generate github workflow files
+
+- default behaviour: ignore if `.github/workflows` exists
+- `--force` flag overwrites entire workflows folder

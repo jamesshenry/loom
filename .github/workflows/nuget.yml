@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Release NuGet Package
+  test:
+    name: Verify before publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,11 +24,45 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json', '.config/dotnet-tools.json') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Run tests
+        run: dotnet loom --target Test
+
+  release:
+    name: Release NuGet Package
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json', '.config/dotnet-tools.json') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - name: Restore .NET tools
         run: dotnet tool restore
 
       - name: Run Loom NuGet Pipeline
-        # Targets: Preparation -> Build -> Pack -> NugetUpload
         env:
           Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
         run: dotnet loom --target Release
