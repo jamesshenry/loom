@@ -13,8 +13,10 @@ public class WorkspaceSettings
     [Description("Additional directories to clean during the Clean target.")]
     public string[] CleanDirectories { get; set; } = [];
 
-    [Description("Whether to upload NuGet packages during a release.")]
-    public bool EnableNugetUpload { get; set; } = false;
+    [Description(
+        "Whether to upload NuGet packages during a release. Set to true to force, false to disable, or leave null to auto-detect based on local environment."
+    )]
+    public bool? EnableNugetUpload { get; set; } = null;
 
     [Description("Whether to create a GitHub release during a release.")]
     public bool EnableGithubRelease { get; set; } = false;

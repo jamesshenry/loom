@@ -54,7 +54,7 @@ public record LoomContext
     public bool EnableVelopack { get; init; } = false;
 
     public string? NugetApiKey { get; init; }
-    public bool EnableNugetUpload { get; init; } = false;
+    public bool? EnableNugetUpload { get; init; }
     public bool EnableGithubRelease { get; init; } = false;
 
     private static string GetDefaultRid()

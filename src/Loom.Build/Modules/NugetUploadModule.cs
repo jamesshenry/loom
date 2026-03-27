@@ -21,13 +21,27 @@ public class NugetUploadModule(LoomContext loomContext) : Module<NugetUploadResu
             {
                 if (!loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Nuget))
                     return SkipDecision.Skip("No nuget artifacts defined in loom.json");
-                if (!loomContext.EnableNugetUpload)
+
+                if (loomContext.EnableNugetUpload == true)
+                {
+                    if (!string.IsNullOrEmpty(loomContext.NugetApiKey))
+                    {
+                        return SkipDecision.DoNotSkip;
+                    }
+                    else
+                    {
+                        return SkipDecision.Skip("Nuget upload enabled but no api key found");
+                    }
+                }
+
+                if (loomContext.EnableNugetUpload == false)
                     return SkipDecision.Skip("NuGet upload disabled in workspace settings.");
-                if (
-                    Environment.GetEnvironmentVariable("LOOM_IGNORE_LOCAL_CHECK") != "true"
-                    && ctx.IsRunningLocally()
-                )
-                    return SkipDecision.Skip("Should not be run locally.");
+
+                if (ctx.IsRunningLocally())
+                    return SkipDecision.Skip(
+                        "Should not be run locally. Set EnableNugetUpload: true to force."
+                    );
+
                 return SkipDecision.DoNotSkip;
             })
             .Build();

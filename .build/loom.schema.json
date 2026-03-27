@@ -13,14 +13,25 @@
         "$ref": "#/definitions/ArtifactSettings"
       }
     },
-    "run": {
-      "$ref": "#/definitions/ExecutionOptions"
+    "global": {
+      "description": "Global loom settings to use if artifact specifc are not set",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/GlobalSettings"
+        }
+      ]
     },
     "nuget": {
-      "$ref": "#/definitions/NugetSettings"
+      "description": "Settings to use NugetUploadModule locally. Use environment variables in production",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/NugetSettings"
+        }
+      ]
     },
     "githubAccessToken": {
-      "type": "string"
+      "type": "string",
+      "description": "Should not be set in dev"
     },
     "$schema": {
       "type": "string",
@@ -52,11 +63,15 @@
         },
         "enableNugetUpload": {
           "type": "boolean",
-          "description": "Whether to upload NuGet packages during a release."
+          "description": "Whether to upload NuGet packages during a release. Set to true to force, false to disable, or leave null to auto-detect based on local environment."
         },
         "enableGithubRelease": {
           "type": "boolean",
           "description": "Whether to create a GitHub release during a release."
+        },
+        "enableVeopackRelease": {
+          "type": "boolean",
+          "description": "Whether to create velopack packages during a release."
         }
       }
     },
@@ -110,7 +125,7 @@
         "Velopack"
       ]
     },
-    "ExecutionOptions": {
+    "GlobalSettings": {
       "type": "object",
       "additionalProperties": false,
       "properties": {

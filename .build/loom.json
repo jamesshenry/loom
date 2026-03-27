@@ -4,8 +4,9 @@
     "solution": "Loom.slnx",
     "artifactsPath": ".artifacts",
     "cleanDirectories": [],
-    "enableNugetUpload": true,
-    "enableGithubRelease": false
+    "enableGithubRelease": false,
+    "enableVeopackRelease": false,
+    "enableNugetUpload": true
   },
   "artifacts": {
     "Loom": {
@@ -13,7 +14,7 @@
       "type": "Nuget"
     }
   },
-  "run": {
+  "global": {
     "target": "Build"
   },
   "nuget": {

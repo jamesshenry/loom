@@ -1,8 +1,13 @@
 {
   "profiles": {
-    "targets2": {
+    "loom.example": {
       "commandName": "Project",
-      "commandLineArgs": "clean",
+      "commandLineArgs": "release",
+      "workingDirectory": "C:/source/personal/loom.example",
+    },
+    "loom.build": {
+      "commandName": "Project",
+      "commandLineArgs": "init",
       "workingDirectory": "C:/source/personal/typical",
     }
   }
