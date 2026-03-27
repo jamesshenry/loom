@@ -51,8 +51,8 @@ public class Commands
 
         try
         {
-            var selectedSln = Setup.DiscoverSolution(currentDir);
-            var selectedProj = Setup.DiscoverMainProject(currentDir);
+            string selectedSln = Setup.DiscoverSolution(currentDir);
+            string selectedProj = Setup.DiscoverMainProject(currentDir);
 
             await Setup.InitializeWorkspace(selectedSln, selectedProj, force);
 
