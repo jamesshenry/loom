@@ -1,6 +1,9 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace Loom.Config;
+
+#pragma warning disable RCS1060 // Declare each type in separate file
 
 [JsonSourceGenerationOptions(
     WriteIndented = true,
@@ -19,8 +22,15 @@ public class LoomSettings
 
     public Dictionary<string, ArtifactSettings> Artifacts { get; set; } = [];
 
-    public ExecutionOptions Run { get; set; } = new();
+    [Description("Global loom settings to use if artifact specifc are not set")]
+    public GlobalSettings Global { get; set; } = new();
+
+    [Description(
+        "Settings to use NugetUploadModule locally. Use environment variables in production"
+    )]
     public NugetSettings Nuget { get; set; } = new();
+
+    [Description("Should not be set in dev")]
     public string GithubAccessToken { get; set; } = string.Empty;
 }
 

@@ -27,7 +27,7 @@ public static class Extensions
     {
         internal LoomContext AddLoomContext(
             string loomJsonPath,
-            ExecutionOptions runSettings,
+            GlobalSettings runSettings,
             string? workingDirectory = null
         )
         {

@@ -1,6 +1,6 @@
 namespace Loom.Config;
 
-public class ExecutionOptions
+public class GlobalSettings
 {
     public BuildTarget Target { get; set; } = BuildTarget.Build;
     public string? Configuration { get; set; }
@@ -12,12 +12,12 @@ public class ExecutionOptions
         var dict = new Dictionary<string, string?>();
 
         if (Rid != null)
-            dict[$"{nameof(LoomSettings.Run)}:{nameof(Rid)}"] = Rid;
+            dict[$"{nameof(LoomSettings.Global)}:{nameof(Rid)}"] = Rid;
 
         if (Version != null)
-            dict[$"{nameof(LoomSettings.Run)}:{nameof(Version)}"] = Version;
+            dict[$"{nameof(LoomSettings.Global)}:{nameof(Version)}"] = Version;
 
-        dict[$"{nameof(LoomSettings.Run)}:{nameof(Target)}"] = Target.ToString();
+        dict[$"{nameof(LoomSettings.Global)}:{nameof(Target)}"] = Target.ToString();
 
         return dict;
     }

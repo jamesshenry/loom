@@ -8,20 +8,22 @@ namespace Loom;
 
 public class Commands
 {
+    /// <summary>
+    /// Default command runs loom against loom.json run.target or BuildTarget.Build
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="target">Build target to run</param>
+    /// <param name="fresh">--clean|Prepend Clean target to start of pipeline</param>
+    /// <returns></returns>
     [Command("")]
     public async Task Root(
         CancellationToken ct,
         [HideDefaultValue] string? rid = null,
-        [HideDefaultValue] string? version = null,
-        [HideDefaultValue] BuildTarget? target = null
+        [HideDefaultValue, Argument] BuildTarget? target = null,
+        bool fresh = false
     )
     {
-        var cliOptions = new ExecutionOptions
-        {
-            Rid = rid,
-            Version = version,
-            Target = target ?? BuildTarget.Build,
-        };
+        var cliOptions = new GlobalSettings { Rid = rid, Target = target ?? BuildTarget.Build };
 
         var loomPath = LoomConfig.ResolveLoomJsonPath();
 
@@ -38,7 +40,7 @@ public class Commands
         builder.Services.AddModules();
         builder.Options.PrintLogo = false;
         builder.Options.ShowProgressInConsole = true;
-        builder.Options.RunOnlyCategories = LoomConfig.GetPipelineCategories(context.Target);
+        builder.Options.RunOnlyCategories = LoomConfig.GetPipelineCategories(context.Target, fresh);
 
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
@@ -51,13 +53,18 @@ public class Commands
 
         try
         {
-            var selectedSln = Setup.DiscoverSolution(currentDir);
-            var selectedProj = Setup.DiscoverMainProject(currentDir);
+            string selectedSln = Setup.DiscoverSolution(currentDir);
+            string selectedProj = Setup.DiscoverMainProject(currentDir);
 
             await Setup.InitializeWorkspace(selectedSln, selectedProj, force);
+            await Setup.InitializeWorkflows(force);
+            await Setup.InitializeDependabot(force);
 
             AnsiConsole.MarkupLine(
                 $"[green]Successfully initialized loom.json for {selectedSln} in .build/[/]"
+            );
+            AnsiConsole.MarkupLine(
+                "[green]GitHub Actions workflows created in .github/workflows/[/]"
             );
         }
         catch (Exception ex)

@@ -25,7 +25,6 @@ public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>
                 }
                 else if (
                     string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_TOKEN"))
-                    && string.IsNullOrWhiteSpace(loomContext.GitHubToken)
                 )
                 {
                     return SkipDecision.Skip("No GitHub token provided.");

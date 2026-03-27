@@ -143,7 +143,7 @@ public static class Setup
                     Type = ArtifactType.Executable,
                 },
             },
-            Run = new ExecutionOptions(),
+            Global = new GlobalSettings(),
         };
 
         var jsonContent = JsonSerializer.Serialize(loom, LoomSettingsContext.Default.LoomSettings);
@@ -168,6 +168,55 @@ public static class Setup
         if (!File.Exists(destinationLoomFile))
         {
             await File.WriteAllTextAsync(destinationLoomFile, finalJson);
+        }
+    }
+
+    public static async Task InitializeWorkflows(bool force)
+    {
+        var workflowsDir = Path.Combine(Environment.CurrentDirectory, ".github", "workflows");
+        var assetsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".github", "workflows");
+
+        if (!Directory.Exists(assetsDir))
+            throw new Exception("Workflow template assets not found.");
+
+        var templateFiles = Directory.GetFiles(assetsDir, "*", SearchOption.AllDirectories);
+
+        if (!Directory.Exists(workflowsDir))
+        {
+            Directory.CreateDirectory(workflowsDir);
+        }
+
+        foreach (var templateFile in templateFiles)
+        {
+            var fileName = Path.GetFileName(templateFile);
+            var destination = Path.Combine(workflowsDir, fileName);
+
+            if (force || !File.Exists(destination))
+            {
+                var content = await File.ReadAllTextAsync(templateFile);
+                await File.WriteAllTextAsync(destination, content);
+            }
+        }
+    }
+
+    internal static async Task InitializeDependabot(bool force)
+    {
+        var dotGithub = Path.Combine(Environment.CurrentDirectory, ".github");
+        var sourceFile = Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            ".github",
+            "dependabot.yml"
+        );
+
+        if (!Directory.Exists(dotGithub))
+        {
+            Directory.CreateDirectory(dotGithub);
+        }
+        var destination = Path.Combine(dotGithub, "dependabot.yml");
+        if (force || !File.Exists(sourceFile))
+        {
+            var content = await File.ReadAllTextAsync(sourceFile);
+            await File.WriteAllTextAsync(destination, content);
         }
     }
 }

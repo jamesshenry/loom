@@ -1,4 +1,4 @@
-name: Publish NuGet
+name: Publish Release
 
 on:
   push:
@@ -35,12 +35,19 @@ jobs:
         run: dotnet tool restore
 
       - name: Run tests
-        run: dotnet loom --target Test
+        run: dotnet loom Test
 
   release:
-    name: Release NuGet Package
+    name: Release Artifacts for ${{ matrix.rid }}
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner_os }}
+    strategy:
+      matrix:
+        include:
+          - { runner_os: ubuntu-latest, rid: linux-x64 }
+          - { runner_os: windows-latest, rid: win-x64 }
+          # - { runner_os: macos-latest, rid: osx-x64 }
+      fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -62,7 +69,8 @@ jobs:
       - name: Restore .NET tools
         run: dotnet tool restore
 
-      - name: Run Loom NuGet Pipeline
+      - name: Run Loom Release Pipeline
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet loom --target Release
+        run: dotnet loom Release

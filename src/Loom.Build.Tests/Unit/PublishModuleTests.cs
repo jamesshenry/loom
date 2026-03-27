@@ -29,7 +29,7 @@ public class PublishModuleTests
                 Solution = "test.sln",
                 ArtifactsPath = ".artifacts",
             },
-            Run = new ExecutionOptions
+            Global = new GlobalSettings
             {
                 Target = BuildTarget.Publish,
                 Rid = "linux-x64",

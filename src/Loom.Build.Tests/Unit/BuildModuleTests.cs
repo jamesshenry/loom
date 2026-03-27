@@ -33,7 +33,7 @@ public class BuildModuleTests
                 Solution = "test.sln",
                 ArtifactsPath = ".artifacts",
             },
-            Run = new ExecutionOptions { Target = target, Configuration = configuration },
+            Global = new GlobalSettings { Target = target, Configuration = configuration },
         };
     }
 

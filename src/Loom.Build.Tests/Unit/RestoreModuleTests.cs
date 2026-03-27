@@ -30,7 +30,7 @@ public class RestoreModuleTests
                 Solution = "test.sln",
                 ArtifactsPath = ".artifacts",
             },
-            Run = new ExecutionOptions
+            Global = new GlobalSettings
             {
                 Target = BuildTarget.Build,
                 Configuration = "Debug",

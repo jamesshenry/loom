@@ -33,7 +33,7 @@ public class CleanModuleTests
                     .Cast<string>()
                     .ToArray(),
             },
-            Run = new ExecutionOptions { Target = BuildTarget.Clean },
+            Global = new GlobalSettings { Target = BuildTarget.Clean },
         };
     }
 

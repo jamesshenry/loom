@@ -38,7 +38,7 @@ public class NugetUploadModuleTests
                 ArtifactsPath = ".artifacts",
                 EnableNugetUpload = enableNugetUpload,
             },
-            Run = new ExecutionOptions { Target = BuildTarget.Publish, Configuration = "Release" },
+            Global = new GlobalSettings { Target = BuildTarget.Publish, Configuration = "Release" },
             Nuget = new NugetSettings { ApiKey = "test-api-key" },
         };
 

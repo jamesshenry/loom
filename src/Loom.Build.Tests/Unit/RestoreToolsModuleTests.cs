@@ -33,7 +33,7 @@ public class RestoreToolsModuleTests
                 Solution = "test.sln",
                 ArtifactsPath = ".artifacts",
             },
-            Run = new ExecutionOptions
+            Global = new GlobalSettings
             {
                 Target = requiresMinVer ? BuildTarget.Publish : BuildTarget.Build,
                 Configuration = "Release",
@@ -243,12 +243,7 @@ public class RestoreToolsModuleTests
             var settings = CreateSettings(requiresMinVer: true, requiresVelopack: true);
             var mockDotNet = new Mock<IDotNet>();
 
-            SetupDotNetMocks(
-                mockDotNet,
-                out _,
-                out _,
-                out var toolOptions
-            );
+            SetupDotNetMocks(mockDotNet, out _, out _, out var toolOptions);
 
             var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
             var pipeline = await builder.BuildAsync();
@@ -268,7 +263,6 @@ public class RestoreToolsModuleTests
                 Directory.Delete(tempDir, true);
         }
     }
-
 
     [Test]
     public async Task ExecuteAsync_RestoresTools_AtEndOfExecution()

@@ -1,8 +1,13 @@
 {
   "profiles": {
-    "targets2": {
+    "loom.example": {
       "commandName": "Project",
       "commandLineArgs": "init --force",
+      "workingDirectory": "C:/source/personal/typical",
+    },
+    "loom.build": {
+      "commandName": "Project",
+      "commandLineArgs": "init",
       "workingDirectory": "C:/source/personal/typical",
     }
   }
