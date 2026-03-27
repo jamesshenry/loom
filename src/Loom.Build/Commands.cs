@@ -8,18 +8,21 @@ namespace Loom;
 
 public class Commands
 {
+    /// <summary>
+    /// Default command runs loom against loom.json run.target or BuildTarget.Build
+    /// </summary>
+    /// <param name="ct"></param>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="target">Build target to run</param>
+    /// <returns></returns>
     [Command("")]
     public async Task Root(
         CancellationToken ct,
         [HideDefaultValue] string? rid = null,
-        [HideDefaultValue] BuildTarget? target = null
+        [HideDefaultValue, Argument] BuildTarget? target = null
     )
     {
-        var cliOptions = new ExecutionOptions
-        {
-            Rid = rid,
-            Target = target ?? BuildTarget.Build,
-        };
+        var cliOptions = new ExecutionOptions { Rid = rid, Target = target ?? BuildTarget.Build };
 
         var loomPath = LoomConfig.ResolveLoomJsonPath();
 
