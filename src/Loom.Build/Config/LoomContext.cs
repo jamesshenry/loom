@@ -17,12 +17,12 @@ public record LoomContext
         ArtifactsDirectory = settings.Workspace.ArtifactsPath;
         CleanDirectories = settings.Workspace.CleanDirectories;
 
-        Target = settings.Run.Target;
-        Version = settings.Run.Version ?? "1.0.0";
-        Rid = settings.Run.Rid ?? GetDefaultRid();
+        Target = settings.Global.Target;
+        Version = settings.Global.Version ?? "1.0.0";
+        Rid = settings.Global.Rid ?? GetDefaultRid();
 
         Configuration =
-            settings.Run.Configuration
+            settings.Global.Configuration
             ?? ((Target is BuildTarget.Release or BuildTarget.Publish) ? "Release" : "Debug");
 
         Artifacts = settings.Artifacts.AsReadOnly();

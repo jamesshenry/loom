@@ -143,7 +143,7 @@ public static class Setup
                     Type = ArtifactType.Executable,
                 },
             },
-            Run = new ExecutionOptions(),
+            Global = new GlobalSettings(),
         };
 
         var jsonContent = JsonSerializer.Serialize(loom, LoomSettingsContext.Default.LoomSettings);

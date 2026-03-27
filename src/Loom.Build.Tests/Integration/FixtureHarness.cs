@@ -62,7 +62,7 @@ public class FixtureHarness : IAsyncInitializer, IAsyncDisposable
     public async Task<PipelineSummary> RunAsync(BuildTarget target)
     {
         var loomJsonPath = Path.Combine(WorkingDir, ".build", "loom.json");
-        var runSettings = new ExecutionOptions { Target = target };
+        var runSettings = new GlobalSettings { Target = target };
 
         var builder = Pipeline.CreateBuilder();
         builder.Services.AddLoomContext(loomJsonPath, runSettings, WorkingDir);

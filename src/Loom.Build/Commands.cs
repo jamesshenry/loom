@@ -23,7 +23,7 @@ public class Commands
         bool fresh = false
     )
     {
-        var cliOptions = new ExecutionOptions { Rid = rid, Target = target ?? BuildTarget.Build };
+        var cliOptions = new GlobalSettings { Rid = rid, Target = target ?? BuildTarget.Build };
 
         var loomPath = LoomConfig.ResolveLoomJsonPath();
 

@@ -13,14 +13,25 @@
         "$ref": "#/definitions/ArtifactSettings"
       }
     },
-    "run": {
-      "$ref": "#/definitions/ExecutionOptions"
+    "global": {
+      "description": "Global loom settings to use if artifact specifc are not set",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/GlobalSettings"
+        }
+      ]
     },
     "nuget": {
-      "$ref": "#/definitions/NugetSettings"
+      "description": "Settings to use NugetUploadModule locally. Use environment variables in production",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/NugetSettings"
+        }
+      ]
     },
     "githubAccessToken": {
-      "type": "string"
+      "type": "string",
+      "description": "Should not be set in dev"
     },
     "$schema": {
       "type": "string",
@@ -114,7 +125,7 @@
         "Velopack"
       ]
     },
-    "ExecutionOptions": {
+    "GlobalSettings": {
       "type": "object",
       "additionalProperties": false,
       "properties": {

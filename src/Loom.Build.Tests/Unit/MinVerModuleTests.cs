@@ -26,7 +26,7 @@ public class MinVerModuleTests
                 Solution = "test.sln",
                 ArtifactsPath = ".artifacts",
             },
-            Run = new ExecutionOptions { Target = BuildTarget.Publish, Configuration = "Release" },
+            Global = new GlobalSettings { Target = BuildTarget.Publish, Configuration = "Release" },
         };
 
         if (artifactPrefixes != null)

@@ -223,7 +223,11 @@ public class TestModuleTests
             var settings = new LoomSettings
             {
                 Workspace = new WorkspaceSettings { Solution = "test.sln" },
-                Run = new ExecutionOptions { Target = BuildTarget.Test, Configuration = "Release" },
+                Global = new GlobalSettings
+                {
+                    Target = BuildTarget.Test,
+                    Configuration = "Release",
+                },
             };
 
             var builder = Pipeline.CreateBuilder();

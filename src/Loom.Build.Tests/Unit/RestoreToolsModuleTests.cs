@@ -33,7 +33,7 @@ public class RestoreToolsModuleTests
                 Solution = "test.sln",
                 ArtifactsPath = ".artifacts",
             },
-            Run = new ExecutionOptions
+            Global = new GlobalSettings
             {
                 Target = requiresMinVer ? BuildTarget.Publish : BuildTarget.Build,
                 Configuration = "Release",
