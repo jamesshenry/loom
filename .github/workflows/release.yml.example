@@ -1,31 +1,54 @@
-name: Publish Stable Release
+name: Publish Release
 
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+" # Stable: 1.2.3
+      - "[0-9]+.[0-9]+.[0-9]+-*" # Preview: 1.2.3-alpha.1
 
 permissions:
   contents: write
 
 jobs:
-  build-and-upload:
-    name: Build & Deploy for ${{ matrix.rid }}
+  test:
+    name: Verify before publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Run tests
+        run: dotnet loom Test
+
+  release:
+    name: Release Artifacts for ${{ matrix.rid }}
+    needs: test
     runs-on: ${{ matrix.runner_os }}
     strategy:
       matrix:
         include:
-          - { runner_os: windows-latest, rid: win-x64, os_name: win }
-          # - { runner_os: ubuntu-latest, rid: linux-x64, os_name: linux }
-          # - { runner_os: macos-latest, rid: osx-x64, os_name: osx }
+          - { runner_os: ubuntu-latest, rid: linux-x64 }
+          - { runner_os: windows-latest, rid: win-x64 }
+          # - { runner_os: macos-latest, rid: osx-x64 }
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -33,7 +56,8 @@ jobs:
         run: dotnet tool restore
 
       - name: Run Loom Release Pipeline
-        # Targets: Preparation -> Build -> Packaging -> Delivery (GitHub Release)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: dotnet loom --target Release
+          Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
+        # Pass the matrix RID into the Loom CLI so the build matches the runner OS
+        run: dotnet loom Release --rid ${{ matrix.rid }}

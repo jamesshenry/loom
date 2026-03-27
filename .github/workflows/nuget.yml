@@ -35,7 +35,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Run tests
-        run: dotnet loom --target Test
+        run: dotnet loom Test
 
   release:
     name: Release NuGet Package
@@ -65,4 +65,4 @@ jobs:
       - name: Run Loom NuGet Pipeline
         env:
           Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet loom --target Release
+        run: dotnet loom Release
