@@ -5,10 +5,10 @@ namespace Loom.Config;
 [JsonConverter(typeof(JsonStringEnumConverter<BuildTarget>))]
 public enum BuildTarget
 {
-    Clean,
-    Restore,
-    Build,
-    Test,
-    Publish,
-    Release,
+    Clean = 1,
+    Restore = 2,
+    Build = 4,
+    Test = 8,
+    Publish = 16,
+    Release = 32,
 }

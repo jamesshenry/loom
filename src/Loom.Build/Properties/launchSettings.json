@@ -2,7 +2,7 @@
   "profiles": {
     "targets2": {
       "commandName": "Project",
-      "commandLineArgs": "init --force",
+      "commandLineArgs": "clean",
       "workingDirectory": "C:/source/personal/typical",
     }
   }

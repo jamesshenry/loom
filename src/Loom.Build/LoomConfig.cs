@@ -12,8 +12,9 @@ public static class LoomConfig
 
     public static string? ResolveLoomJsonPath() => PossibleLoomPaths.FirstOrDefault(File.Exists);
 
-    public static string[] GetPipelineCategories(BuildTarget target) =>
-        target switch
+    public static string[] GetPipelineCategories(BuildTarget target, bool clean = false)
+    {
+        string[] categories = target switch
         {
             BuildTarget.Clean => ["Clean"],
             BuildTarget.Restore => ["Preparation"],
@@ -23,4 +24,6 @@ public static class LoomConfig
             BuildTarget.Release => ["Preparation", "Build", "Packaging", "Delivery"],
             _ => [],
         };
+        return (clean && target != BuildTarget.Clean) ? ["Clean", .. categories] : categories;
+    }
 }
