@@ -2,8 +2,8 @@
   "profiles": {
     "loom.example": {
       "commandName": "Project",
-      "commandLineArgs": "release",
-      "workingDirectory": "C:/source/personal/loom.example",
+      "commandLineArgs": "init --force",
+      "workingDirectory": "C:/source/personal/typical",
     },
     "loom.build": {
       "commandName": "Project",

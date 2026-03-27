@@ -57,9 +57,14 @@ public class Commands
             string selectedProj = Setup.DiscoverMainProject(currentDir);
 
             await Setup.InitializeWorkspace(selectedSln, selectedProj, force);
+            await Setup.InitializeWorkflows(force);
+            await Setup.InitializeDependabot(force);
 
             AnsiConsole.MarkupLine(
                 $"[green]Successfully initialized loom.json for {selectedSln} in .build/[/]"
+            );
+            AnsiConsole.MarkupLine(
+                "[green]GitHub Actions workflows created in .github/workflows/[/]"
             );
         }
         catch (Exception ex)
