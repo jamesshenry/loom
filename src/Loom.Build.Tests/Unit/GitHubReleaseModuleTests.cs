@@ -38,7 +38,6 @@ public class GitHubReleaseModuleTests
         Solution = "test.sln",
         ArtifactsDirectory = ".artifacts",
         EnableGithubRelease = true,
-        GitHubToken = "fake-token",
         Target = BuildTarget.Publish,
         Configuration = "Release",
         Rid = "win-x64",

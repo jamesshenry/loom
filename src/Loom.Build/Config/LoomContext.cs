@@ -23,14 +23,13 @@ public record LoomContext
 
         Configuration =
             settings.Run.Configuration
-            ?? (Target is BuildTarget.Release or BuildTarget.Publish ? "Release" : "Debug");
+            ?? ((Target is BuildTarget.Release or BuildTarget.Publish) ? "Release" : "Debug");
 
         Artifacts = settings.Artifacts.AsReadOnly();
 
         RequiresMinVer = LoomConfig.GetPipelineCategories(Target).Contains("Packaging");
 
         NugetApiKey = settings.Nuget.ApiKey;
-        GitHubToken = settings.GithubAccessToken;
         EnableVelopack =
             settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack)
             || settings.Workspace.EnableVeopackRelease;
@@ -55,7 +54,6 @@ public record LoomContext
     public bool EnableVelopack { get; init; } = false;
 
     public string? NugetApiKey { get; init; }
-    public string? GitHubToken { get; init; }
     public bool EnableNugetUpload { get; init; } = false;
     public bool EnableGithubRelease { get; init; } = false;
 
