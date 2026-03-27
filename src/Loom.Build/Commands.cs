@@ -12,14 +12,12 @@ public class Commands
     public async Task Root(
         CancellationToken ct,
         [HideDefaultValue] string? rid = null,
-        [HideDefaultValue] string? version = null,
         [HideDefaultValue] BuildTarget? target = null
     )
     {
         var cliOptions = new ExecutionOptions
         {
             Rid = rid,
-            Version = version,
             Target = target ?? BuildTarget.Build,
         };
 
