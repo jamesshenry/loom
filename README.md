@@ -35,7 +35,7 @@ configure loom.json to publish/pack artifacts
 dotnet loom publish
 ```
 
-artifacts are not clean unless explicitly set
+artifacts are not cleaned unless explicitly set
 
 ```
 dotnet loom clean # The Clean module
