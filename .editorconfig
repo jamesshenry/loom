@@ -156,7 +156,7 @@ dotnet_diagnostic.RCS1040.severity = suggestion
 dotnet_diagnostic.RCS1042.severity = suggestion
 dotnet_diagnostic.RCS1043.severity = suggestion
 dotnet_diagnostic.RCS1045.severity = warning
-dotnet_diagnostic.RCS1050.severity = suggestion
+dotnet_diagnostic.RCS1050.severity = silent # Simplify object creation
 dotnet_diagnostic.RCS1051.severity = suggestion
 dotnet_diagnostic.RCS1060.severity = suggestion
 dotnet_diagnostic.RCS1061.severity = suggestion
@@ -200,7 +200,7 @@ dotnet_diagnostic.RCS1253.severity = suggestion
 dotnet_diagnostic.RCS1254.severity = suggestion
 dotnet_diagnostic.RCS1255.severity = none
 dotnet_diagnostic.RCS1260.severity = suggestion
-dotnet_diagnostic.RCS1264.severity = suggestion
+dotnet_diagnostic.RCS1264.severity = silent # Use explicit type instead of 'var'
 dotnet_diagnostic.RCS9001.severity = suggestion
 
 dotnet_diagnostic.IDE0007.severity = none
