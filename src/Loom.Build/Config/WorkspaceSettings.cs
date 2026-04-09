@@ -16,11 +16,11 @@ public class WorkspaceSettings
     [Description(
         "Whether to upload NuGet packages during a release. Set to true to force, false to disable, or leave null to auto-detect based on local environment."
     )]
-    public bool? EnableNugetUpload { get; set; } = null;
+    public bool? EnableNugetUpload { get; set; } = false;
 
     [Description("Whether to create a GitHub release during a release.")]
-    public bool EnableGithubRelease { get; set; } = false;
+    public bool? EnableGithubRelease { get; set; } = false;
 
     [Description("Whether to create velopack packages during a release.")]
-    public bool EnableVelopackRelease { get; set; } = false;
+    public bool? EnableVelopackRelease { get; set; } = false;
 }

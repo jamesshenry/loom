@@ -17,7 +17,7 @@ public record LoomContext
         ArtifactsDirectory = settings.Workspace.ArtifactsPath;
         CleanDirectories = settings.Workspace.CleanDirectories;
 
-        Target = settings.Global.Target;
+        Target = settings.Global.Target ?? BuildTarget.Build;
         Version = settings.Global.Version ?? "1.0.0";
         Rid = settings.Global.Rid ?? GetDefaultRid();
 
@@ -32,9 +32,9 @@ public record LoomContext
         NugetApiKey = settings.Nuget.ApiKey;
         EnableVelopack =
             settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack)
-            || settings.Workspace.EnableVelopackRelease;
-        EnableNugetUpload = settings.Workspace.EnableNugetUpload;
-        EnableGithubRelease = settings.Workspace.EnableGithubRelease;
+            || (settings.Workspace.EnableVelopackRelease ?? false);
+        EnableNugetUpload = settings.Workspace.EnableNugetUpload ?? false;
+        EnableGithubRelease = settings.Workspace.EnableGithubRelease ?? false;
     }
 
     public string WorkingDirectory { get; init; } = string.Empty;
