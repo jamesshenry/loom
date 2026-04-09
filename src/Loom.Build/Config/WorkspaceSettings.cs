@@ -22,5 +22,5 @@ public class WorkspaceSettings
     public bool EnableGithubRelease { get; set; } = false;
 
     [Description("Whether to create velopack packages during a release.")]
-    public bool EnableVeopackRelease { get; set; } = false;
+    public bool EnableVelopackRelease { get; set; } = false;
 }

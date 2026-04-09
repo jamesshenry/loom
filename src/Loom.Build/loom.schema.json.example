@@ -69,7 +69,7 @@
           "type": "boolean",
           "description": "Whether to create a GitHub release during a release."
         },
-        "enableVeopackRelease": {
+        "enableVelopackRelease": {
           "type": "boolean",
           "description": "Whether to create velopack packages during a release."
         }
