@@ -32,7 +32,7 @@ public record LoomContext
         NugetApiKey = settings.Nuget.ApiKey;
         EnableVelopack =
             settings.Artifacts.Values.Any(a => a.Type == ArtifactType.Velopack)
-            || settings.Workspace.EnableVeopackRelease;
+            || settings.Workspace.EnableVelopackRelease;
         EnableNugetUpload = settings.Workspace.EnableNugetUpload;
         EnableGithubRelease = settings.Workspace.EnableGithubRelease;
     }
