@@ -45,39 +45,4 @@ public class MinVerModule(LoomContext loomContext) : Module<MinVerResult>
 
         return new MinVerResult(results);
     }
-
-    // private static async Task<string> RunMinVerAsync(
-    //     IModuleContext context,
-    //     string? tagPrefix,
-    //     string workingDirectory,
-    //     CancellationToken ct
-    // )
-    // {
-    //     var options = new MinVerOptions();
-    //     context.Logger.LogDebug("Minver Options:\n {Options}", options);
-    //     var result = await context.Shell.Command.ExecuteCommandLineTool(
-    //         options: options,
-    //         executionOptions: new CommandExecutionOptions
-    //         {
-    //             ThrowOnNonZeroExitCode = true,
-    //             WorkingDirectory = workingDirectory,
-    //         },
-    //         cancellationToken: ct
-    //     );
-
-    //     var version = result.StandardOutput.Trim();
-    //     if (string.IsNullOrWhiteSpace(version))
-    //     {
-    //         throw new Exception(
-    //             "MinVer output was empty. Check if Git is initialized and tags exist."
-    //         );
-    //     }
-
-    //     context.Logger.LogInformation(
-    //         "MinVer calculated version (prefix: '{Prefix}'): {Version}",
-    //         tagPrefix ?? "(none)",
-    //         version
-    //     );
-    //     return version;
-    // }
 }

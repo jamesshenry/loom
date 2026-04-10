@@ -11,7 +11,7 @@ public static class Extensions
         public static string GetRepoRoot(string? startPath = default)
         {
             var dir = new DirectoryInfo(startPath ?? Directory.GetCurrentDirectory());
-            while (dir != null)
+            while (dir is not null)
             {
                 if (dir.GetDirectories(".git").Length != 0 || dir.GetFiles("*.slnx").Length != 0)
                 {
