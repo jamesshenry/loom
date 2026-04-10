@@ -7,7 +7,7 @@ namespace Loom.Velopack.Options;
 public partial record VelopackOptions : VelopackBaseOptions;
 
 [CliTool("dotnet")]
-[CliSubCommand("vpk")]
+[CliSubCommand("vpk", "pack")]
 [ExcludeFromCodeCoverage]
 public partial record DotNetVelopackOptions : VelopackBaseOptions;
 
@@ -54,19 +54,19 @@ public abstract record VelopackBaseOptions : CommandLineToolOptions
     public string? Exclude { get; set; }
 
     [CliOption("--noPortable")]
-    public bool NoPortable { get; set; }
+    public bool? NoPortable { get; set; }
 
     [CliOption("--noInst")]
-    public bool NoInst { get; set; }
+    public bool? NoInst { get; set; }
 
     [CliOption("--framework", ShortForm = "-f")]
     public string? Framework { get; set; }
 
-    [CliOption("--splashImage", ShortForm = "-s")]
-    public string? SplashImage { get; set; }
+    [CliOption("--splashProgressColor")]
+    public string? SplashProgressColor { get; set; }
 
     [CliOption("--skipVeloAppCheck")]
-    public bool SkipVeloAppCheck { get; set; }
+    public bool? SkipVeloAppCheck { get; set; }
 
     [CliOption("--signTemplate")]
     public string? SignTemplate { get; set; }
@@ -77,8 +77,11 @@ public abstract record VelopackBaseOptions : CommandLineToolOptions
     [CliOption("--signParallel")]
     public int? SignParallel { get; set; }
 
+    [CliOption("--aumid")]
+    public int? ApplicationUserModelId { get; set; }
+
     [CliOption("--shortcuts")]
-    public string? Shortcuts { get; set; }
+    public string? Shortcuts { get; set; } = "None";
 
     [CliOption("--signParams", ShortForm = "-n")]
     public string? SignParams { get; set; }
@@ -86,9 +89,30 @@ public abstract record VelopackBaseOptions : CommandLineToolOptions
     [CliOption("--azureTrustedSignFile")]
     public string? AzureTrustedSignFile { get; set; }
 
-    [CliOption("--msiDeploymentTool")]
-    public bool MsiDeploymentTool { get; set; }
+    [CliOption("--msi")]
+    public bool? Msi { get; set; }
 
-    [CliOption("--msiDeploymentToolVersion")]
-    public string? MsiDeploymentToolVersion { get; set; }
+    [CliOption("--msiVersion")]
+    public string? MsiVersion { get; set; }
+
+    [CliOption("--instWelcome")]
+    public string? InstallerWelcomePath { get; set; }
+
+    [CliOption("--instLicense")]
+    public string? InstallerLicensePath { get; set; }
+
+    [CliOption("--instReadme")]
+    public string? InstallerReadmePath { get; set; }
+
+    [CliOption("--instConclusion")]
+    public string? InstallerConclusionPath { get; set; }
+
+    [CliOption("--instLocation")]
+    public string? InstallerLocation { get; set; }
+
+    [CliOption("--msiBanner")]
+    public string? MsiBannerPath { get; set; }
+
+    [CliOption("--msiLogo")]
+    public string? MsiLogoPath { get; set; }
 }

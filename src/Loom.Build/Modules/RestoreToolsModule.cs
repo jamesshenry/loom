@@ -68,7 +68,10 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
             await context
                 .DotNet()
                 .Tool.Execute(
-                    new DotNetToolOptions() { Arguments = ["install", "vpk"] },
+                    new DotNetToolOptions()
+                    {
+                        Arguments = ["install", "vpk", "--version 0.0.1535-gb21da2a"],
+                    },
                     executionOptions: new CommandExecutionOptions
                     {
                         WorkingDirectory = _loom.WorkingDirectory,

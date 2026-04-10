@@ -2,7 +2,7 @@
   "profiles": {
     "loom.example": {
       "commandName": "Project",
-      "commandLineArgs": "",
+      "commandLineArgs": "release",
       "workingDirectory": "C:/source/personal/typical",
     },
     "loom.build": {
