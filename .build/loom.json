@@ -4,13 +4,13 @@
     "solution": "Loom.slnx",
     "artifactsPath": ".artifacts",
     "cleanDirectories": [],
+    "enableNugetUpload": true,
     "enableGithubRelease": false,
-    "enableVeopackRelease": false,
-    "enableNugetUpload": true
+    "enableVelopackRelease": false
   },
   "artifacts": {
     "Loom": {
-      "project": "src/Loom.Build/Loom.Build.csproj",
+      "project": "src\\Loom.Build\\Loom.Build.csproj",
       "type": "Nuget"
     }
   },
