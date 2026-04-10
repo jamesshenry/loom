@@ -87,13 +87,7 @@ public static class Setup
 
     public static string DiscoverMainProject(DirectoryInfo currentDir)
     {
-        var projFiles = currentDir
-            .GetFiles("*.csproj", SearchOption.AllDirectories)
-            .Where(f =>
-                !f.FullName.Contains("test", StringComparison.OrdinalIgnoreCase)
-                && !f.FullName.Contains("build", StringComparison.OrdinalIgnoreCase)
-            )
-            .ToList();
+        var projFiles = currentDir.GetFiles("*.csproj", SearchOption.AllDirectories).ToList();
 
         return projFiles.Count == 0 ? "src/YourProject.csproj"
             : projFiles.Count == 1
