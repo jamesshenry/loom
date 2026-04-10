@@ -67,9 +67,9 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
 
             string directive = artifact.Rid.ToLower() switch
             {
-                var r when r.StartsWith("win") => "[win]",
-                var r when r.StartsWith("osx") => "[osx]",
-                var r when r.StartsWith("linux") => "[linux]",
+                var r when r.StartsWith("win") => "win",
+                var r when r.StartsWith("osx") => "osx",
+                var r when r.StartsWith("linux") => "linux",
                 _ => throw new NotSupportedException(
                     $"RID {artifact.Rid} is not supported by Velopack."
                 ),
@@ -84,7 +84,7 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                         PackVersion = version.ToString(),
                         PackDir = publishDir,
                         OutputDir = releaseDir,
-                        Channel = directive.Trim('[', ']'),
+                        Channel = directive,
                     },
                     executionOptions: new CommandExecutionOptions
                     {
