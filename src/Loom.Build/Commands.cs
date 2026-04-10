@@ -23,7 +23,7 @@ public class Commands
         bool fresh = false
     )
     {
-        var cliOptions = new GlobalSettings { Rid = rid, Target = target ?? BuildTarget.Build };
+        var cliOptions = new GlobalSettings { Rid = rid, Target = target };
 
         var loomPath = LoomConfig.ResolveLoomJsonPath();
 
@@ -59,13 +59,6 @@ public class Commands
             await Setup.InitializeWorkspace(selectedSln, selectedProj, force);
             await Setup.InitializeWorkflows(force);
             await Setup.InitializeDependabot(force);
-
-            AnsiConsole.MarkupLine(
-                $"[green]Successfully initialized loom.json for {selectedSln} in .build/[/]"
-            );
-            AnsiConsole.MarkupLine(
-                "[green]GitHub Actions workflows created in .github/workflows/[/]"
-            );
         }
         catch (Exception ex)
         {

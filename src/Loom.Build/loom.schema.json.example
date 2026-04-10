@@ -130,7 +130,14 @@
       "additionalProperties": false,
       "properties": {
         "target": {
-          "$ref": "#/definitions/BuildTarget"
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/BuildTarget"
+            }
+          ]
         },
         "configuration": {
           "type": "string"

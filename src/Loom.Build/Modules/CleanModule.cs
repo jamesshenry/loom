@@ -1,5 +1,4 @@
 using Loom.Config;
-using ModularPipelines.DotNet.Options;
 
 namespace Loom.Modules;
 
@@ -18,7 +17,6 @@ public class CleanModule(LoomContext loomContext) : Module<CleanResult>
         CancellationToken ct
     )
     {
-        // 1. MSBuild clean target
         context.Logger.LogInformation(
             "Executing MSBuild Clean target for {Solution}",
             loomContext.Solution
@@ -34,10 +32,8 @@ public class CleanModule(LoomContext loomContext) : Module<CleanResult>
                 cancellationToken: ct
             );
 
-        // 2. Clear known custom directories
         var deletionQueue = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Add artifacts dir
         deletionQueue.Add(
             Path.GetFullPath(
                 Path.Combine(loomContext.WorkingDirectory, loomContext.ArtifactsDirectory)

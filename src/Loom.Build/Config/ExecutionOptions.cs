@@ -2,7 +2,7 @@ namespace Loom.Config;
 
 public class GlobalSettings
 {
-    public BuildTarget Target { get; set; } = BuildTarget.Build;
+    public BuildTarget? Target { get; set; } = BuildTarget.Build;
     public string? Configuration { get; set; }
     public string? Rid { get; set; }
     public string? Version { get; set; }
@@ -11,13 +11,14 @@ public class GlobalSettings
     {
         var dict = new Dictionary<string, string?>();
 
-        if (Rid != null)
+        if (Rid is not null)
             dict[$"{nameof(LoomSettings.Global)}:{nameof(Rid)}"] = Rid;
 
-        if (Version != null)
+        if (Version is not null)
             dict[$"{nameof(LoomSettings.Global)}:{nameof(Version)}"] = Version;
 
-        dict[$"{nameof(LoomSettings.Global)}:{nameof(Target)}"] = Target.ToString();
+        if (Target is not null)
+            dict[$"{nameof(LoomSettings.Global)}:{nameof(Target)}"] = Target.ToString();
 
         return dict;
     }

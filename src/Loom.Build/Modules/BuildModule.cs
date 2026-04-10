@@ -6,11 +6,8 @@ public record BuildResult(string? Output);
 
 [ModuleCategory("Build")]
 [DependsOn<RestoreModule>(Optional = true)]
-public class BuildModule(LoomContext buildContext, IConfiguration configuration)
-    : Module<BuildResult>
+public class BuildModule(LoomContext buildContext) : Module<BuildResult>
 {
-    private readonly IConfiguration _configuration = configuration;
-
     protected override async Task<BuildResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct

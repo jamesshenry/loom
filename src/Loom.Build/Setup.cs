@@ -87,13 +87,7 @@ public static class Setup
 
     public static string DiscoverMainProject(DirectoryInfo currentDir)
     {
-        var projFiles = currentDir
-            .GetFiles("*.csproj", SearchOption.AllDirectories)
-            .Where(f =>
-                !f.FullName.Contains("test", StringComparison.OrdinalIgnoreCase)
-                && !f.FullName.Contains("build", StringComparison.OrdinalIgnoreCase)
-            )
-            .ToList();
+        var projFiles = currentDir.GetFiles("*.csproj", SearchOption.AllDirectories).ToList();
 
         return projFiles.Count == 0 ? "src/YourProject.csproj"
             : projFiles.Count == 1
@@ -155,19 +149,19 @@ public static class Setup
 
         var destinationLoomFile = Path.Combine(buildDir, "loom.json");
 
-        if (force)
-        {
-            await File.WriteAllTextAsync(destinationSchemaFile, schemaJson);
-            await File.WriteAllTextAsync(destinationLoomFile, finalJson);
-            return;
-        }
-        if (!File.Exists(destinationSchemaFile))
-        {
-            await File.WriteAllTextAsync(destinationSchemaFile, schemaJson);
-        }
-        if (!File.Exists(destinationLoomFile))
+        if (!File.Exists(destinationLoomFile) || force)
         {
             await File.WriteAllTextAsync(destinationLoomFile, finalJson);
+            AnsiConsole.MarkupLine(
+                $"[green]Successfully initialized loom.json for {selectedSln} in .build/[/]"
+            );
+        }
+        if (!File.Exists(destinationSchemaFile) || force)
+        {
+            await File.WriteAllTextAsync(destinationSchemaFile, schemaJson);
+            AnsiConsole.MarkupLine(
+                $"[green]Successfully initialized loom.schema.json for {selectedSln} in .build/[/]"
+            );
         }
     }
 
@@ -195,6 +189,10 @@ public static class Setup
             {
                 var content = await File.ReadAllTextAsync(templateFile);
                 await File.WriteAllTextAsync(destination, content);
+
+                AnsiConsole.MarkupLine(
+                    $"[green]Successfully initialized {fileName} in .github/workflows[/]"
+                );
             }
         }
     }
@@ -212,11 +210,15 @@ public static class Setup
         {
             Directory.CreateDirectory(dotGithub);
         }
+
         var destination = Path.Combine(dotGithub, "dependabot.yml");
+
         if (force || !File.Exists(sourceFile))
         {
             var content = await File.ReadAllTextAsync(sourceFile);
             await File.WriteAllTextAsync(destination, content);
+
+            AnsiConsole.MarkupLine("[green]dependabot.yml created in .github[/]");
         }
     }
 }

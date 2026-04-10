@@ -1,6 +1,5 @@
 using Loom.Config;
 using ModularPipelines.GitHub.Extensions;
-using ModularPipelines.GitHub.Options;
 using Octokit;
 
 namespace Loom.Modules;

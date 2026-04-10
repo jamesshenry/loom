@@ -1,6 +1,3 @@
-using System.Collections.Frozen;
-using System.Collections.ObjectModel;
-using Loom.Config;
 using Loom.MinVer;
 using Loom.Modules;
 using Microsoft.Extensions.Configuration;
@@ -11,47 +8,10 @@ using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
-using ModularPipelines.Modules;
 using ModularPipelines.Options;
 using Moq;
-using YamlDotNet.Serialization;
 
 namespace Loom.Build.Tests.Unit;
-
-public class FakeBuildModule : BuildModule
-{
-    // public readonly Mock<IDotNet> mockDotNet = new Mock<IDotNet>().Setup
-    public FakeBuildModule(LoomContext loomContext, IConfiguration configuration)
-        : base(loomContext, configuration) { }
-
-    protected override Task<BuildResult?> ExecuteAsync(IModuleContext context, CancellationToken ct)
-    {
-        return Task.FromResult<BuildResult?>(new BuildResult("success"));
-    }
-}
-
-public class FakeMinVerModule : MinVerModule
-{
-    public static readonly MinVerVersion MinVer123 = new("1.2.3");
-    public static readonly MinVerVersion MinVer124 = new("1.2.4");
-
-    public FakeMinVerModule(LoomContext loomContext)
-        : base(loomContext) { }
-
-    protected override Task<MinVerResult?> ExecuteAsync(
-        IModuleContext context,
-        CancellationToken ct
-    ) =>
-        Task.FromResult<MinVerResult?>(
-            new MinVerResult(
-                new Dictionary<string, MinVerVersion>
-                {
-                    [string.Empty] = MinVer123,
-                    ["v"] = MinVer124,
-                }
-            )
-        );
-}
 
 public class PackModuleTests
 {
@@ -278,4 +238,38 @@ public class PackModuleTests
                 Directory.Delete(tempDir, true);
         }
     }
+}
+
+public class FakeBuildModule : BuildModule
+{
+    public FakeBuildModule(LoomContext loomContext)
+        : base(loomContext) { }
+
+    protected override Task<BuildResult?> ExecuteAsync(IModuleContext context, CancellationToken ct)
+    {
+        return Task.FromResult<BuildResult?>(new BuildResult("success"));
+    }
+}
+
+public class FakeMinVerModule : MinVerModule
+{
+    public static readonly MinVerVersion MinVer123 = new("1.2.3");
+    public static readonly MinVerVersion MinVer124 = new("1.2.4");
+
+    public FakeMinVerModule(LoomContext loomContext)
+        : base(loomContext) { }
+
+    protected override Task<MinVerResult?> ExecuteAsync(
+        IModuleContext context,
+        CancellationToken ct
+    ) =>
+        Task.FromResult<MinVerResult?>(
+            new MinVerResult(
+                new Dictionary<string, MinVerVersion>
+                {
+                    [string.Empty] = MinVer123,
+                    ["v"] = MinVer124,
+                }
+            )
+        );
 }
