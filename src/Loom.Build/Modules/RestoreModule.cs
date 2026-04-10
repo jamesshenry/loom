@@ -6,6 +6,7 @@ public record RestoreResult(CommandResult CommandResult);
 
 [ModuleCategory("Preparation")]
 [DependsOn<RestoreToolsModule>(Optional = true)]
+[DependsOn<CleanModule>(Optional = true)]
 public class RestoreModule(LoomContext buildContext, IConfiguration configuration)
     : Module<RestoreResult>
 {
