@@ -5,7 +5,7 @@
   <ItemGroup>
     <PackageVersion Include="ConsoleAppFramework" Version="5.7.13" />
     <PackageVersion Include="MinVer" Version="7.0.0" />
-    <PackageVersion Include="ModularPipelines" Version="3.1.90" />
+    <PackageVersion Include="ModularPipelines" Version="3.2.8" />
     <PackageVersion Include="ModularPipelines.DotNet" Version="3.1.90" />
     <PackageVersion Include="ModularPipelines.Git" Version="3.1.90" />
     <PackageVersion Include="ModularPipelines.GitHub" Version="3.1.90" />
