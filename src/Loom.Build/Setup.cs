@@ -54,7 +54,7 @@ public static class Setup
         {
             foreach (var prop in def.Properties.Values)
             {
-                if ((prop.Type & JsonObjectType.Null) != 0)
+                if (prop.Type.HasFlag(JsonObjectType.Null))
                 {
                     prop.Type &= ~JsonObjectType.Null;
                 }
