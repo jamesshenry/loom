@@ -15,6 +15,13 @@
         "loom"
       ],
       "rollForward": false
+    },
+    "vpk": {
+      "version": "0.0.1589-ga2c5a97",
+      "commands": [
+        "vpk"
+      ],
+      "rollForward": false
     }
   }
 }

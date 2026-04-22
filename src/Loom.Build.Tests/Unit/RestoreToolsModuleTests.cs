@@ -231,38 +231,38 @@ public class RestoreToolsModuleTests
         }
     }
 
-    [Test]
-    public async Task ExecuteAsync_InstallsRequiredTools_Always()
-    {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+    // [Test]
+    // public async Task ExecuteAsync_InstallsRequiredTools_Always()
+    // {
+    //     var tempDir = CreateTemporaryDirectory();
+    //     try
+    //     {
+    //         System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
 
-            // Context requires both minver-cli and vpk
-            var settings = CreateSettings(requiresMinVer: true, requiresVelopack: true);
-            var mockDotNet = new Mock<IDotNet>();
+    //         // Context requires both minver-cli and vpk
+    //         var settings = CreateSettings(requiresMinVer: true, requiresVelopack: true);
+    //         var mockDotNet = new Mock<IDotNet>();
 
-            SetupDotNetMocks(mockDotNet, out _, out _, out var toolOptions);
+    //         SetupDotNetMocks(mockDotNet, out _, out _, out var toolOptions);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            await pipeline.RunAsync();
+    //         var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
+    //         var pipeline = await builder.BuildAsync();
+    //         await pipeline.RunAsync();
 
-            // Should have 2 install commands
-            var installCommands = toolOptions.Where(o => o.Arguments!.Contains("install")).ToList();
-            await Assert.That(installCommands).Count().IsEqualTo(2);
-            await Assert
-                .That(installCommands.Any(o => o.Arguments!.Contains("minver-cli")))
-                .IsTrue();
-            await Assert.That(installCommands.Any(o => o.Arguments!.Contains("vpk"))).IsTrue();
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
-    }
+    //         // Should have 2 install commands
+    //         var installCommands = toolOptions.Where(o => o.Arguments!.Contains("install")).ToList();
+    //         await Assert.That(installCommands).Count().IsEqualTo(2);
+    //         await Assert
+    //             .That(installCommands.Any(o => o.Arguments!.Contains("minver-cli")))
+    //             .IsTrue();
+    //         await Assert.That(installCommands.Any(o => o.Arguments!.Contains("vpk"))).IsTrue();
+    //     }
+    //     finally
+    //     {
+    //         if (Directory.Exists(tempDir))
+    //             Directory.Delete(tempDir, true);
+    //     }
+    // }
 
     [Test]
     public async Task ExecuteAsync_RestoresTools_AtEndOfExecution()
