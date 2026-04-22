@@ -51,33 +51,16 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
 
         if (_loom.RequiresMinVer)
         {
-            await context
-                .DotNet()
-                .Tool.Execute(
-                    new DotNetToolOptions() { Arguments = ["install", "minver-cli"] },
-                    executionOptions: new CommandExecutionOptions
-                    {
-                        WorkingDirectory = _loom.WorkingDirectory,
-                    },
-                    cancellationToken: ct
-                );
+            context.Logger.LogInformation(
+                "MinVer is required. Please run 'dotnet tool install minver-cli' and commit dotnet-tools.json."
+            );
         }
 
         if (_loom.EnableVelopack)
         {
-            await context
-                .DotNet()
-                .Tool.Execute(
-                    new DotNetToolOptions()
-                    {
-                        Arguments = ["install", "vpk", "--version 0.0.1535-gb21da2a"],
-                    },
-                    executionOptions: new CommandExecutionOptions
-                    {
-                        WorkingDirectory = _loom.WorkingDirectory,
-                    },
-                    cancellationToken: ct
-                );
+            context.Logger.LogInformation(
+                "Velopack is required. Please run 'dotnet tool install vpk --version 0.0.1535-gb21da2a' and commit dotnet-tools.json."
+            );
         }
 
         context.Logger.LogInformation("Restoring dotnet local tools...");
