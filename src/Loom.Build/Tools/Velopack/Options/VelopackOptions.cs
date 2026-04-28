@@ -2,57 +2,23 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Loom.Velopack.Options;
 
-[CliTool("vpk")]
+[CliTool("dotnet")]
+[CliSubCommand("vpk", "[linux]", "pack")]
 [ExcludeFromCodeCoverage]
-public partial record VelopackOptions : VelopackBaseOptions;
+public partial record DotNetVelopackPackLinuxOptions : VelopackPackBaseOptions
+{
+    [CliOption("--categories")]
+    public string? Categories { get; set; }
+
+    [CliOption("--compression")]
+    public string? Compression { get; set; }
+}
 
 [CliTool("dotnet")]
-[CliSubCommand("vpk", "pack")]
+[CliSubCommand("vpk", "[win]", "pack")]
 [ExcludeFromCodeCoverage]
-public partial record DotNetVelopackOptions : VelopackBaseOptions;
-
-[ExcludeFromCodeCoverage]
-public abstract record VelopackBaseOptions : CommandLineToolOptions
+public partial record DotNetVelopackPackWinOptions : VelopackPackBaseOptions
 {
-    [CliOption("--outputDir", ShortForm = "-o")]
-    public string? OutputDir { get; set; }
-
-    [CliOption("--channel", ShortForm = "-c")]
-    public string? Channel { get; set; }
-
-    [CliOption("--runtime", ShortForm = "-r")]
-    public string? Runtime { get; set; }
-
-    [CliOption("--packId", ShortForm = "-u")]
-    public string? PackId { get; set; }
-
-    [CliOption("--packVersion", ShortForm = "-v")]
-    public string? PackVersion { get; set; }
-
-    [CliOption("--packDir", ShortForm = "-p")]
-    public string? PackDir { get; set; }
-
-    [CliOption("--packAuthors")]
-    public string? PackAuthors { get; set; }
-
-    [CliOption("--packTitle")]
-    public string? PackTitle { get; set; }
-
-    [CliOption("--releaseNotes")]
-    public string? ReleaseNotes { get; set; }
-
-    [CliOption("--delta")]
-    public string? Delta { get; set; }
-
-    [CliOption("--icon", ShortForm = "-i")]
-    public string? Icon { get; set; }
-
-    [CliOption("--mainExe", ShortForm = "-e")]
-    public string? MainExe { get; set; }
-
-    [CliOption("--exclude")]
-    public string? Exclude { get; set; }
-
     [CliOption("--noPortable")]
     public bool? NoPortable { get; set; }
 
@@ -115,4 +81,47 @@ public abstract record VelopackBaseOptions : CommandLineToolOptions
 
     [CliOption("--msiLogo")]
     public string? MsiLogoPath { get; set; }
+}
+
+[ExcludeFromCodeCoverage]
+public record VelopackPackBaseOptions : CommandLineToolOptions
+{
+    [CliOption("--outputDir", ShortForm = "-o")]
+    public string? OutputDir { get; set; }
+
+    [CliOption("--channel", ShortForm = "-c")]
+    public string? Channel { get; set; }
+
+    [CliOption("--runtime", ShortForm = "-r")]
+    public string? Runtime { get; set; }
+
+    [CliOption("--packId", ShortForm = "-u")]
+    public string? PackId { get; set; }
+
+    [CliOption("--packVersion", ShortForm = "-v")]
+    public string? PackVersion { get; set; }
+
+    [CliOption("--packDir", ShortForm = "-p")]
+    public string? PackDir { get; set; }
+
+    [CliOption("--packAuthors")]
+    public string? PackAuthors { get; set; }
+
+    [CliOption("--packTitle")]
+    public string? PackTitle { get; set; }
+
+    [CliOption("--releaseNotes")]
+    public string? ReleaseNotes { get; set; }
+
+    [CliOption("--delta")]
+    public string? Delta { get; set; }
+
+    [CliOption("--icon", ShortForm = "-i")]
+    public string? Icon { get; set; }
+
+    [CliOption("--mainExe", ShortForm = "-e")]
+    public string? MainExe { get; set; }
+
+    [CliOption("--exclude")]
+    public string? Exclude { get; set; }
 }

@@ -6,7 +6,7 @@ namespace Loom.Velopack;
 public interface IVelopackPack
 {
     Task ExecuteAsync(
-        VelopackBaseOptions options,
+        VelopackPackBaseOptions options,
         CommandExecutionOptions? executionOptions = null,
         CancellationToken ct = default
     );

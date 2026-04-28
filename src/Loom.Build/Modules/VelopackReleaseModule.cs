@@ -65,27 +65,30 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                 artifact.Rid
             );
 
-            string directive = artifact.Rid.ToLower() switch
+            VelopackPackBaseOptions velopackPackOptions = new VelopackPackBaseOptions
             {
-                var r when r.StartsWith("win") => "win",
-                var r when r.StartsWith("osx") => "osx",
-                var r when r.StartsWith("linux") => "linux",
-                _ => throw new NotSupportedException(
-                    $"RID {artifact.Rid} is not supported by Velopack."
-                ),
+                PackId = packId,
+                PackVersion = version.ToString(),
+                PackDir = publishDir,
+                OutputDir = releaseDir,
             };
 
+            velopackPackOptions = artifact.Rid.ToLower() switch
+            {
+                var r when r.StartsWith("win") => new DotNetVelopackPackWinOptions() with
+                {
+                    PackId = velopackPackOptions.PackId,
+                    PackVersion = velopackPackOptions.PackVersion,
+                    PackDir = velopackPackOptions.PackDir,
+                    OutputDir = velopackPackOptions.OutputDir,
+                    Shortcuts = "None",
+                },
+                _ => throw new NotSupportedException("Switch case not supported"),
+            };
             await context
                 .Velopack()
                 .ExecuteAsync(
-                    new DotNetVelopackOptions
-                    {
-                        PackId = packId,
-                        PackVersion = version.ToString(),
-                        PackDir = publishDir,
-                        OutputDir = releaseDir,
-                        Channel = directive,
-                    },
+                    velopackPackOptions,
                     executionOptions: new CommandExecutionOptions
                     {
                         WorkingDirectory = loomContext.WorkingDirectory,

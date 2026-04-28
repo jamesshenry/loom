@@ -1,0 +1,35 @@
+  --outputDir, -o, --outputDir <DIR>
+  --channel, -c, --channel <NAME>
+  --runtime, -r, --runtime <RID>
+  --packId, --packId, -u <ID> (REQ)
+  --packVersion, --packVersion, -v <VERSION> (REQ)
+  --packDir, --packDir, -p <DIR> (REQ)
+  --packAuthors, --packAuthors <AUTHORS>
+  --packTitle, --packTitle <NAME>
+  --releaseNotes, --releaseNotes <PATH>
+  --delta, --delta <delta>
+  --icon, -i, --icon <PATH>
+  --mainExe, -e, --mainExe <NAME>
+  --exclude, --exclude <REGEX>
+  --noPortable, --noPortable <noPortable>
+  --noInst, --noInst <noInst>
+  --framework, -f, --framework <RUNTIMES>
+  --splashImage, -s, --splashImage <PATH>
+  --splashProgressColor, --splashProgressColor <COLOR>
+  --skipVeloAppCheck, --skipVeloAppCheck <skipVeloAppCheck
+  --signTemplate, --signTemplate <COMMAND>
+  --signExclude, --signExclude <signExclude>
+  --signParallel, --signParallel <NUM>
+  --aumid, --aumid <AUMID>
+  --shortcuts, --shortcuts <LOC>
+  --signParams, --signParams, -n <PARAMS>
+  --azureTrustedSignFile, --azureTrustedSignFile <PATH>
+  --msi, --msi <msi>
+  --msiVersion, --msiVersion <VERSION>
+  --instWelcome, --instWelcome <PATH>
+  --instLicense, --instLicense <PATH>
+  --instReadme, --instReadme <PATH>
+  --instConclusion, --instConclusion <PATH>
+  --instLocation, --instLocation <LOCATION>
+  --msiBanner, --msiBanner <PATH>
+  --msiLogo, --msiLogo <PATH>

@@ -100,16 +100,16 @@ public class VelopackReleaseTests
         };
 
         var mockVelopack = new Mock<IVelopackPack>();
-        VelopackBaseOptions? capturedOptions = null;
+        VelopackPackBaseOptions? capturedOptions = null;
         mockVelopack
             .Setup(x =>
                 x.ExecuteAsync(
-                    It.IsAny<VelopackBaseOptions>(),
+                    It.IsAny<VelopackPackBaseOptions>(),
                     It.IsAny<CommandExecutionOptions>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<VelopackBaseOptions, CommandExecutionOptions, CancellationToken>(
+            .Callback<VelopackPackBaseOptions, CommandExecutionOptions, CancellationToken>(
                 (opts, _, _) => capturedOptions = opts
             )
             .Returns(Task.CompletedTask);

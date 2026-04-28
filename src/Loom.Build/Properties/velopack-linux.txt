@@ -1,0 +1,15 @@
+  --outputDir, -o, --outputDir <DIR>
+  --channel, -c, --channel <NAME>
+  --runtime, -r, --runtime <RID>
+  --packId, --packId, -u <ID> (REQ)
+  --packVersion, --packVersion, -v <VERSION> (REQ)
+  --packDir, --packDir, -p <DIR> (REQ)
+  --packAuthors, --packAuthors <AUTHORS>
+  --packTitle, --packTitle <NAME>
+  --releaseNotes, --releaseNotes <PATH>
+  --delta, --delta <delta>
+  --icon, -i, --icon <PATH>
+  --mainExe, -e, --mainExe <NAME>
+  --exclude, --exclude <REGEX>
+  --categories, --categories <NAMES>
+  --compression, --compression <ALGO>
