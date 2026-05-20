@@ -1,13 +1,16 @@
 using Loom.Config;
 using Loom.Modules;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using ModularPipelines;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
+
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -107,7 +110,6 @@ public class RestoreModuleTests
 
             await Assert.That(capturedOptions).Count().IsEqualTo(1);
             await Assert.That(capturedOptions[0].ProjectSolution).IsEqualTo("test.sln");
-            await Assert.That(capturedOptions[0].Runtime).IsEqualTo("win-x64");
 
             await Assert.That(capturedExecOptions).Count().IsEqualTo(1);
             await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir);

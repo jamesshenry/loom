@@ -56,6 +56,7 @@ public record LoomContext
     public string? NugetApiKey { get; init; }
     public bool? EnableNugetUpload { get; init; }
     public bool EnableGithubRelease { get; init; } = false;
+    public ReadOnlyCollection<ResolvedArtifact> ResolvedArtifacts { get; init; } = [];
 
     private static string GetDefaultRid()
     {

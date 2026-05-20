@@ -3,6 +3,8 @@ using Loom.MinVer;
 using Loom.Velopack;
 using Loom.Velopack.Options;
 
+using static Loom.Modules.PublishHelpers;
+
 namespace Loom.Modules;
 
 public record VelopackArtifactResult(string ArtifactName, string ReleaseDir, string Version);
@@ -19,8 +21,12 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
             .Create()
             .WithSkipWhen(ctx =>
             {
-                return !loomContext.Artifacts.Any(x => x.Value.Type == ArtifactType.Velopack)
-                    ? SkipDecision.Skip("No velopack artifacts defined in loom.json")
+                // Only run if there are Velopack artifacts that the current host is capable of building
+                var hasCompatibleArtifacts = loomContext.ResolvedArtifacts
+                    .Any(a => a.CanBuildOnHost && a.Settings.Type == ArtifactType.Velopack);
+
+                return !hasCompatibleArtifacts
+                    ? SkipDecision.Skip("No compatible Velopack artifacts for this host.")
                     : SkipDecision.DoNotSkip;
             })
             .Build();
@@ -32,45 +38,51 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
     )
     {
         var publishModule = await context.GetModule<PublishModule>();
-        var publishedArtifactsInfo = publishModule.ValueOrDefault;
-        var publishedArtifacts = publishedArtifactsInfo?.Artifacts ?? [];
+        var publishedArtifacts = publishModule.ValueOrDefault?.Artifacts ?? [];
 
         var minVerModule = await context.GetModule<MinVerModule>();
         var minVerResult = minVerModule.ValueOrDefault;
 
-        var root = loomContext.WorkingDirectory;
         var results = new List<VelopackArtifactResult>();
 
-        var velopackArtifacts = publishedArtifacts
-            .Where(a => a.Type == ArtifactType.Velopack)
-            .ToList();
+        // Filter for artifacts that are marked as Velopack and were compatible with this host
+        var targetArtifacts = loomContext.ResolvedArtifacts
+            .Where(a => a.CanBuildOnHost && a.Settings.Type == ArtifactType.Velopack);
 
-        foreach (var artifact in velopackArtifacts)
+        foreach (var artifact in targetArtifacts)
         {
-            var artifactSettings = loomContext.Artifacts[artifact.ArtifactName];
+            var publishedInfo = publishedArtifacts.FirstOrDefault(p =>
+                p.ArtifactName.Equals(artifact.Name, StringComparison.OrdinalIgnoreCase));
 
-            var version = !string.IsNullOrWhiteSpace(artifactSettings.Version)
-                ? MinVerVersion.From(artifactSettings.Version)
-                : minVerResult?.GetVersion(artifactSettings.TagPrefix);
+            if (publishedInfo == null)
+            {
+                context.Logger.LogWarning("Expected published output for {Name} was not found. Skipping Velopack packaging.", artifact.Name);
+                continue;
+            }
 
-            var packId = artifactSettings.VelopackId ?? artifact.ArtifactName;
+            var version = !string.IsNullOrWhiteSpace(artifact.Settings.Version)
+                ? MinVerVersion.From(artifact.Settings.Version)
+                : minVerResult?.GetVersion(artifact.Settings.TagPrefix);
+
             ArgumentNullException.ThrowIfNull(version, nameof(version));
 
-            var publishDir = artifact.PublishDirectory.Path;
+            var packId = artifact.Settings.VelopackId ?? artifact.Name;
+            var publishDir = publishedInfo.PublishDirectory.Path;
             var releaseDir = Path.Combine(
-                root,
+                loomContext.WorkingDirectory,
                 loomContext.ArtifactsDirectory,
                 "release",
-                artifact.ArtifactName,
+                artifact.Name,
                 artifact.Rid
             );
 
-            VelopackPackBaseOptions velopackPackOptions = new VelopackPackBaseOptions
+            VelopackPackBaseOptions velopackPackOptions = new()
             {
                 PackId = packId,
                 PackVersion = version.ToString(),
                 PackDir = publishDir,
                 OutputDir = releaseDir,
+                Runtime = artifact.Rid,
             };
 
             velopackPackOptions = artifact.Rid.ToLower() switch
@@ -81,8 +93,10 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                     PackVersion = velopackPackOptions.PackVersion,
                     PackDir = velopackPackOptions.PackDir,
                     OutputDir = velopackPackOptions.OutputDir,
+                    Runtime = velopackPackOptions.Runtime,
                     Shortcuts = "None",
                 },
+                var r when r.StartsWith("linux") => velopackPackOptions,
                 _ => throw new NotSupportedException("Switch case not supported"),
             };
             await context
@@ -96,9 +110,7 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                     ct: ct
                 );
 
-            results.Add(
-                new VelopackArtifactResult(artifact.ArtifactName, releaseDir, version.ToString())
-            );
+            results.Add(new VelopackArtifactResult(artifact.Name, releaseDir, version.ToString()));
         }
 
         return results;

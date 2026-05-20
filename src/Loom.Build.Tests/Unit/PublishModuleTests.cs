@@ -1,12 +1,15 @@
 using Loom.Config;
 using Loom.Modules;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using ModularPipelines;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
+
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -20,64 +23,54 @@ public class PublishModuleTests
         return tempDirectory;
     }
 
-    private static LoomSettings CreateSettings(bool withPublishableArtifact = true)
+    private static LoomContext CreateTestContext(bool withPublishableArtifact = true, string tempDir = "/test")
     {
         var settings = new LoomSettings
         {
-            Workspace = new WorkspaceSettings
-            {
-                Solution = "test.sln",
-                ArtifactsPath = ".artifacts",
-            },
+            Workspace = new WorkspaceSettings { Solution = "test.sln", ArtifactsPath = ".artifacts" },
             Global = new GlobalSettings
             {
                 Target = BuildTarget.Publish,
-                Rid = "linux-x64",
+                Rid = "linux-x64", // The Global Default
                 Configuration = "Release",
             },
         };
 
+        var resolved = new List<ResolvedArtifact>();
+
         if (withPublishableArtifact)
         {
-            settings.Artifacts.Add(
-                "MyApp",
-                new ArtifactSettings
-                {
-                    Type = ArtifactType.Executable,
-                    Project = "MyApp.csproj",
-                    Rid = "win-x64", // Explicit rid overlay
-                }
-            );
+            // Artifact 1: Explicit RID overrides Global
+            var myApp = new ArtifactSettings { Type = ArtifactType.Executable, Project = "MyApp.csproj", Rid = "win-x64" };
+            settings.Artifacts.Add("MyApp", myApp);
+            resolved.Add(new ResolvedArtifact("MyApp", myApp, "win-x64", IsAot: false, CanBuildOnHost: true));
 
-            settings.Artifacts.Add(
-                "MyVelopack",
-                new ArtifactSettings
-                {
-                    Type = ArtifactType.Velopack,
-                    Project = "MyVelopack.csproj",
-                    // No explicit rid, should fallback to Context setting
-                }
-            );
+            // Artifact 2: No RID, falls back to Global "linux-x64"
+            var myVelo = new ArtifactSettings { Type = ArtifactType.Velopack, Project = "MyVelopack.csproj" };
+            settings.Artifacts.Add("MyVelopack", myVelo);
+            resolved.Add(new ResolvedArtifact("MyVelopack", myVelo, "linux-x64", IsAot: false, CanBuildOnHost: true));
         }
         else
         {
-            settings.Artifacts.Add(
-                "MyPackage",
-                new ArtifactSettings { Type = ArtifactType.Nuget, Project = "MyLib.csproj" }
-            );
+            var myPackage = new ArtifactSettings { Type = ArtifactType.Nuget, Project = "MyLib.csproj" };
+            settings.Artifacts.Add("MyPackage", myPackage);
+            resolved.Add(new ResolvedArtifact("MyPackage", myPackage, "linux-x64", IsAot: false, CanBuildOnHost: true));
         }
 
-        return settings;
+        // Return the context with the "Reality" (ResolvedArtifacts) populated
+        return new LoomContext(settings, tempDir)
+        {
+            ResolvedArtifacts = resolved.AsReadOnly()
+        };
     }
 
     private static PipelineBuilder CreateSilentPipelineBuilder(
-        LoomSettings settings,
-        string tempDir,
+        LoomContext context,
         Mock<IDotNet> mockDotNet
     )
     {
         var builder = Pipeline.CreateBuilder();
-        builder.Services.AddSingleton(new LoomContext(settings, tempDir));
+        builder.Services.AddSingleton(context);
         builder.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         builder.Services.AddSingleton(mockDotNet.Object);
         builder.Services.AddModule<PublishModule>();
@@ -97,9 +90,9 @@ public class PublishModuleTests
         var tempDir = CreateTemporaryDirectory();
         try
         {
-            var settings = CreateSettings(withPublishableArtifact: false);
+            var context = CreateTestContext(false, CreateTemporaryDirectory());
             var mockDotNet = new Mock<IDotNet>();
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
+            var builder = CreateSilentPipelineBuilder(context, mockDotNet);
 
             var pipeline = await builder.BuildAsync();
             var summary = await pipeline.RunAsync();
@@ -126,7 +119,7 @@ public class PublishModuleTests
             var dummyFile = Path.Combine(publishDir, "old-binary.dll");
             await File.WriteAllTextAsync(dummyFile, "dummy");
 
-            var settings = CreateSettings();
+            var context = CreateTestContext(true, tempDir);
             var mockDotNet = new Mock<IDotNet>();
             mockDotNet
                 .Setup(x =>
@@ -138,7 +131,7 @@ public class PublishModuleTests
                 )
                 .ReturnsAsync((CommandResult)null!);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
+            var builder = CreateSilentPipelineBuilder(context, mockDotNet);
             var pipeline = await builder.BuildAsync();
             await pipeline.RunAsync();
 
@@ -158,7 +151,7 @@ public class PublishModuleTests
         var tempDir = CreateTemporaryDirectory();
         try
         {
-            var settings = CreateSettings();
+            var context = CreateTestContext(true, tempDir);
             var mockDotNet = new Mock<IDotNet>();
             var capturedOptions = new List<DotNetPublishOptions>();
 
@@ -175,7 +168,7 @@ public class PublishModuleTests
                 )
                 .ReturnsAsync((CommandResult)null!);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
+            var builder = CreateSilentPipelineBuilder(context, mockDotNet);
             var pipeline = await builder.BuildAsync();
             await pipeline.RunAsync();
 
@@ -212,7 +205,7 @@ public class PublishModuleTests
         var tempDir = CreateTemporaryDirectory();
         try
         {
-            var settings = CreateSettings();
+            var context = CreateTestContext(true, tempDir);
             var mockDotNet = new Mock<IDotNet>();
 
             mockDotNet
@@ -225,7 +218,7 @@ public class PublishModuleTests
                 )
                 .ReturnsAsync((CommandResult)null!);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
+            var builder = CreateSilentPipelineBuilder(context, mockDotNet);
             var pipeline = await builder.BuildAsync();
             var summary = await pipeline.RunAsync();
             var moduleResult = await summary.GetModule<PublishModule>();
