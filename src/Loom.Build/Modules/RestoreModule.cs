@@ -24,7 +24,6 @@ public class RestoreModule(LoomContext buildContext, IConfiguration configuratio
                 new DotNetRestoreOptions
                 {
                     ProjectSolution = buildContext.Solution,
-                    Runtime = buildContext.Rid,
                 },
                 executionOptions: new CommandExecutionOptions
                 {

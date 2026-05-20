@@ -3,12 +3,7 @@
     "loom.example": {
       "commandName": "Project",
       "commandLineArgs": "release",
-      "workingDirectory": "C:/source/personal/typical",
-    },
-    "loom.build": {
-      "commandName": "Project",
-      "commandLineArgs": "init",
-      "workingDirectory": "C:/source/personal/typical",
+      "workingDirectory": "V:/source/personal/typical",
     }
   }
 }

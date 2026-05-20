@@ -1,5 +1,8 @@
+using System.Runtime.InteropServices;
+
 using Loom.Config;
 using Loom.Modules;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Loom;
@@ -50,7 +53,25 @@ public static class Extensions
 
             config.Bind(settings);
             workingDirectory ??= Environment.CurrentDirectory;
-            var context = new LoomContext(settings, workingDirectory);
+
+            var resolved = new List<ResolvedArtifact>();
+            foreach (var (name, art) in settings.Artifacts)
+            {
+                var rid = art.Rid ?? settings.Global.Rid ?? GetDefaultRid();
+
+                var projectPath = Path.Combine(workingDirectory, art.Project);
+                bool isAot = File.Exists(projectPath) &&
+                             File.ReadAllText(projectPath).Contains("<PublishAot>true", StringComparison.OrdinalIgnoreCase);
+
+                bool canBuild = !isAot || IsNativeHostCompatible(rid);
+
+                resolved.Add(new ResolvedArtifact(name, art, rid, isAot, canBuild));
+            }
+
+            var context = new LoomContext(settings, workingDirectory)
+            {
+                ResolvedArtifacts = resolved.AsReadOnly()
+            };
             services.AddSingleton(settings);
             services.AddSingleton(context);
 
@@ -73,7 +94,52 @@ public static class Extensions
 
             return services;
         }
+        public static bool IsNativeHostCompatible(string targetRid)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return targetRid.StartsWith("win", StringComparison.OrdinalIgnoreCase);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return targetRid.StartsWith("linux", StringComparison.OrdinalIgnoreCase);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return targetRid.StartsWith("osx", StringComparison.OrdinalIgnoreCase);
+
+            return false;
+        }
+        public static string GetDefaultRid()
+        {
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return "linux-x64";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return "osx-x64";
+            }
+            else
+            {
+                return "win-x64";
+            }
+        }
     }
 
     extension(IConfiguration configuration) { }
+
+    extension(ArtifactSettings artifact)
+    {
+        public bool IsPublishable()
+        {
+            return artifact.Type == ArtifactType.Executable || artifact.Type == ArtifactType.Velopack;
+        }
+    }
 }
+
+public record ResolvedArtifact(
+    string Name,
+    ArtifactSettings Settings,
+    string Rid,
+    bool IsAot,
+    bool CanBuildOnHost
+);

@@ -1,11 +1,14 @@
 using Loom.Modules;
 using Loom.Velopack;
 using Loom.Velopack.Options;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using ModularPipelines;
 using ModularPipelines.Context;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Options;
+
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -69,7 +72,7 @@ public class VelopackReleaseTests
         var result = await summary.GetModule<VelopackReleaseModule>();
 
         await Assert.That(result.SkipDecisionOrDefault?.ShouldSkip).IsTrue();
-        await Assert.That(result.SkipDecisionOrDefault?.Reason).Contains("No velopack artifacts");
+        await Assert.That(result.SkipDecisionOrDefault?.Reason).Contains("No compatible Velopack artifacts for this host.");
     }
 
     [Test]
@@ -81,6 +84,7 @@ public class VelopackReleaseTests
             Type = ArtifactType.Velopack,
             Project = $"{artifactName}.csproj",
             VelopackId = "Custom.Id",
+            Rid = "win-x64",
         };
 
         var loomContext = defaultLoomContext with
@@ -89,6 +93,15 @@ public class VelopackReleaseTests
             {
                 [artifactName] = expectedArtifact,
             },
+            ResolvedArtifacts = new List<ResolvedArtifact>
+        {
+            new ResolvedArtifact(
+                Name: artifactName,
+                Settings: expectedArtifact,
+                Rid: "win-x64",
+                IsAot: false,
+                CanBuildOnHost: true)
+        }.AsReadOnly()
         };
 
         var packDir = Path.Combine(WorkingDir, ArtifactsDir, "publish", artifactName, "win-x64");
@@ -100,16 +113,16 @@ public class VelopackReleaseTests
         };
 
         var mockVelopack = new Mock<IVelopackPack>();
-        VelopackBaseOptions? capturedOptions = null;
+        VelopackPackBaseOptions? capturedOptions = null;
         mockVelopack
             .Setup(x =>
                 x.ExecuteAsync(
-                    It.IsAny<VelopackBaseOptions>(),
+                    It.IsAny<VelopackPackBaseOptions>(),
                     It.IsAny<CommandExecutionOptions>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<VelopackBaseOptions, CommandExecutionOptions, CancellationToken>(
+            .Callback<VelopackPackBaseOptions, CommandExecutionOptions, CancellationToken>(
                 (opts, _, _) => capturedOptions = opts
             )
             .Returns(Task.CompletedTask);
@@ -131,20 +144,34 @@ public class VelopackReleaseTests
         await Assert.That(capturedOptions.PackVersion).IsEqualTo("1.2.3");
         await Assert.That(capturedOptions.PackDir).IsEqualTo(packDir);
         await Assert.That(capturedOptions.OutputDir).IsEqualTo(outputDir);
-        await Assert.That(capturedOptions.Channel).IsEqualTo("win");
     }
 
     [Test]
     public async Task ExecuteAsync_ThrowsNotSupportedException_ForUnknownRid()
     {
         var artifactName = "MyVelopackApp";
+        var settings = new ArtifactSettings
+        {
+            Type = ArtifactType.Velopack,
+            Project = "app.csproj"
+        };
         var loomContext = defaultLoomContext with
         {
             Rid = "unknown-rid",
             Artifacts = new Dictionary<string, ArtifactSettings>
             {
-                [artifactName] = new() { Type = ArtifactType.Velopack, Project = "app.csproj" },
+                [artifactName] = settings,
             },
+            ResolvedArtifacts = new List<ResolvedArtifact>
+        {
+            new ResolvedArtifact(
+                Name: artifactName,
+                Settings: settings,
+                Rid: "unknown-rid", // This will trigger the default switch case
+                IsAot: false,
+                CanBuildOnHost: true
+            )
+        }.AsReadOnly()
         };
         var publishedArtifacts = new List<PublishedArtifact>
         {

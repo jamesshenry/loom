@@ -1,4 +1,5 @@
 using Loom.Config;
+
 using ModularPipelines.FileSystem;
 
 namespace Loom.Modules;
@@ -17,42 +18,49 @@ public record PublishResult(List<PublishedArtifact> Artifacts);
 [DependsOn<BuildModule>(Optional = true)]
 public class PublishModule(LoomContext buildContext) : Module<PublishResult>
 {
-    protected override ModuleConfiguration Configure() =>
-        ModuleConfiguration
+    private async Task<bool> IsAotEnabled(string projectPath, IModuleContext context)
+    {
+        // Simple robust check: does the csproj text contain <PublishAot>true
+        // You can use context.Files to read it
+        var file = context.Files.GetFile(projectPath);
+        if (!file.Exists) return false;
+
+        var content = await file.ReadAsync();
+        return content.Contains("<PublishAot>true", StringComparison.OrdinalIgnoreCase);
+    }
+    protected override ModuleConfiguration Configure()
+    {
+        return ModuleConfiguration
             .Create()
             .WithSkipWhen(ctx =>
-                !buildContext.Artifacts.Any(a =>
-                    a.Value.Type == ArtifactType.Executable || a.Value.Type == ArtifactType.Velopack
-                )
-                    ? SkipDecision.Skip("No velopack or executable artifacts defined in loom.json")
-                    : SkipDecision.DoNotSkip
-            )
+            {
+                return !buildContext.ResolvedArtifacts.Any(a => a.CanBuildOnHost && a.Settings.Type != ArtifactType.Nuget)
+                    ? SkipDecision.Skip("No compatible artifacts for this host.")
+                    : SkipDecision.DoNotSkip;
+            })
             .Build();
+    }
 
     protected override async Task<PublishResult?> ExecuteAsync(
         IModuleContext context,
         CancellationToken ct
     )
     {
-        var publishableArtifacts = buildContext
-            .Artifacts.Where(a =>
-                a.Value.Type == ArtifactType.Executable || a.Value.Type == ArtifactType.Velopack
-            )
-            .ToList();
+        var publishableArtifacts = buildContext.ResolvedArtifacts
+            .Where(a => a.CanBuildOnHost && (a.Settings.Type == ArtifactType.Executable || a.Settings.Type == ArtifactType.Velopack));
+
 
         var results = new List<PublishedArtifact>();
 
-        foreach (var (artifactName, artifactSettings) in publishableArtifacts)
+        foreach (var artifact in publishableArtifacts)
         {
-            var rid = artifactSettings.Rid ?? buildContext.Rid;
-            ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
 
             var publishDirPath = Path.Combine(
                 buildContext.WorkingDirectory,
                 buildContext.ArtifactsDirectory,
                 "publish",
-                artifactName,
-                rid
+                artifact.Name,
+                artifact.Rid
             );
 
             var publishFolder = context.Files.GetFolder(publishDirPath);
@@ -68,9 +76,9 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
 
             context.Logger.LogInformation(
                 "Publishing {ArtifactName} ({Project}) for {Rid} in {Config} mode",
-                artifactName,
-                artifactSettings.Project,
-                rid,
+                artifact.Name,
+                artifact.Settings.Project,
+                artifact.Rid,
                 buildContext.Configuration
             );
 
@@ -79,11 +87,10 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
                 .Publish(
                     new DotNetPublishOptions
                     {
-                        ProjectSolution = artifactSettings.Project,
+                        ProjectSolution = artifact.Settings.Project,
                         Configuration = buildContext.Configuration,
                         Output = publishFolder.Path,
-                        Runtime = rid,
-                        NoRestore = true,
+                        Runtime = artifact.Rid,
                     },
                     executionOptions: new CommandExecutionOptions
                     {
@@ -94,10 +101,10 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
 
             results.Add(
                 new PublishedArtifact(
-                    ArtifactName: artifactName,
+                    ArtifactName: artifact.Name,
                     PublishDirectory: publishFolder,
-                    Rid: rid,
-                    Type: artifactSettings.Type
+                    Rid: artifact.Rid,
+                    Type: artifact.Settings.Type
                 )
             );
         }
