@@ -1,14 +1,10 @@
 using Loom.Config;
 using Loom.Modules;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-using ModularPipelines;
-using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
-using ModularPipelines.Models;
 using ModularPipelines.Options;
 
 using Moq;
@@ -17,13 +13,6 @@ namespace Loom.Build.Tests.Unit;
 
 public class RestoreModuleTests
 {
-    private static string CreateTemporaryDirectory()
-    {
-        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDirectory);
-        return tempDirectory;
-    }
-
     private static LoomSettings CreateSettings()
     {
         return new LoomSettings
@@ -42,110 +31,84 @@ public class RestoreModuleTests
         };
     }
 
-    private static PipelineBuilder CreateSilentPipelineBuilder(
-        LoomSettings settings,
-        string tempDir,
-        Mock<IDotNet> mockDotNet
-    )
-    {
-        var builder = Pipeline.CreateBuilder();
-        builder.Services.AddSingleton(new LoomContext(settings, tempDir));
-        builder.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        builder.Services.AddSingleton(mockDotNet.Object);
-        builder.Services.AddModule<RestoreModule>();
-
-        builder.Options.PrintLogo = false;
-        builder.Options.ShowProgressInConsole = false;
-        builder.Options.PrintResults = false;
-        builder.Options.PrintDependencyChains = false;
-        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Silent;
-
-        return builder;
-    }
-
     [Test]
     public async Task ExecuteAsync_PassesCorrectOptionsToDotNetRestore()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            var settings = CreateSettings();
-            var mockDotNet = new Mock<IDotNet>();
+        using var tempDir = new TempDirectory();
+        var settings = CreateSettings();
+        var mockDotNet = new Mock<IDotNet>();
 
-            var capturedOptions = new List<DotNetRestoreOptions>();
-            var capturedExecOptions = new List<CommandExecutionOptions>();
+        var capturedOptions = new List<DotNetRestoreOptions>();
+        var capturedExecOptions = new List<CommandExecutionOptions>();
 
-            var emptyCommandResult = TestHelpers.EmptyCommandResult;
 
-            mockDotNet
-                .Setup(d =>
-                    d.Restore(
-                        It.IsAny<DotNetRestoreOptions>(),
-                        It.IsAny<CommandExecutionOptions>(),
-                        It.IsAny<CancellationToken>()
-                    )
+
+        mockDotNet
+            .Setup(d =>
+                d.Restore(
+                    It.IsAny<DotNetRestoreOptions>(),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
                 )
-                .Callback<DotNetRestoreOptions, CommandExecutionOptions, CancellationToken>(
-                    (opts, execOpts, _) =>
-                    {
-                        capturedOptions.Add(opts);
-                        capturedExecOptions.Add(execOpts);
-                    }
-                )
-                .ReturnsAsync(emptyCommandResult);
+            )
+            .Callback<DotNetRestoreOptions, CommandExecutionOptions, CancellationToken>(
+                (opts, execOpts, _) =>
+                {
+                    capturedOptions.Add(opts);
+                    capturedExecOptions.Add(execOpts);
+                }
+            )
+            .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            await pipeline.RunAsync();
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        await pipeline.RunAsync();
 
-            await Assert.That(capturedOptions).Count().IsEqualTo(1);
-            await Assert.That(capturedOptions[0].ProjectSolution).IsEqualTo("test.sln");
+        await Assert.That(capturedOptions).Count().IsEqualTo(1);
+        await Assert.That(capturedOptions[0].ProjectSolution).IsEqualTo("test.sln");
 
-            await Assert.That(capturedExecOptions).Count().IsEqualTo(1);
-            await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(capturedExecOptions).Count().IsEqualTo(1);
+        await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir.Path);
     }
 
     [Test]
     public async Task ExecuteAsync_ReturnsRestoreResult_WrappingCommandResult()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            var settings = CreateSettings();
-            var mockDotNet = new Mock<IDotNet>();
-            var emptyCommandResult = TestHelpers.EmptyCommandResult;
+        using var tempDir = new TempDirectory();
+        var settings = CreateSettings();
+        var mockDotNet = new Mock<IDotNet>();
+        var emptyCommandResult = TestHelpers.EmptyCommandResult();
 
-            mockDotNet
-                .Setup(d =>
-                    d.Restore(
-                        It.IsAny<DotNetRestoreOptions>(),
-                        It.IsAny<CommandExecutionOptions>(),
-                        It.IsAny<CancellationToken>()
-                    )
+
+        mockDotNet
+            .Setup(d =>
+                d.Restore(
+                    It.IsAny<DotNetRestoreOptions>(),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
                 )
-                .ReturnsAsync(emptyCommandResult);
+            )
+            .ReturnsAsync(emptyCommandResult);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            var summary = await pipeline.RunAsync();
-            var moduleResult = await summary.GetModule<RestoreModule>();
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        var summary = await pipeline.RunAsync();
+        var moduleResult = await summary.GetModule<RestoreModule>();
 
-            var val = moduleResult.ValueOrDefault;
+        var val = moduleResult.ValueOrDefault;
 
-            await Assert.That(val).IsNotNull(); // Expecting RestoreResult here
-            await Assert.That(val!.CommandResult).IsNotNull();
-            await Assert.That(val!.CommandResult).IsEqualTo(emptyCommandResult);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(val).IsNotNull(); // Expecting RestoreResult here
+        await Assert.That(val!.CommandResult).IsNotNull();
+        await Assert.That(val!.CommandResult).IsEqualTo(emptyCommandResult);
     }
 }
