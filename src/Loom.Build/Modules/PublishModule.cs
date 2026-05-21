@@ -16,6 +16,7 @@ public record PublishResult(List<PublishedArtifact> Artifacts);
 [ModuleCategory("Packaging")]
 [DependsOn<RestoreModule>(Optional = true)]
 [DependsOn<BuildModule>(Optional = true)]
+[DependsOn<MinVerModule>(Optional = true)]
 public class PublishModule(LoomContext buildContext) : Module<PublishResult>
 {
     private async Task<bool> IsAotEnabled(string projectPath, IModuleContext context)
@@ -46,6 +47,9 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
         CancellationToken ct
     )
     {
+        var minVerModule = await context.GetModule<MinVerModule>();
+        var minVerResult = minVerModule.ValueOrDefault;
+
         var publishableArtifacts = buildContext.ResolvedArtifacts
             .Where(a => a.CanBuildOnHost && (a.Settings.Type == ArtifactType.Executable || a.Settings.Type == ArtifactType.Velopack));
 
@@ -82,6 +86,10 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
                 buildContext.Configuration
             );
 
+            var versionProperties = PublishHelpers.CreateVersionProperties(
+                PublishHelpers.ResolveVersion(artifact.Settings, minVerResult)
+            );
+
             await context
                 .DotNet()
                 .Publish(
@@ -91,6 +99,7 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
                         Configuration = buildContext.Configuration,
                         Output = publishFolder.Path,
                         Runtime = artifact.Rid,
+                        Properties = versionProperties,
                     },
                     executionOptions: new CommandExecutionOptions
                     {

@@ -109,20 +109,15 @@ public static class Extensions
         }
         public static string GetDefaultRid()
         {
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return "linux-x64";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                return "osx-x64";
-            }
-            else
-            {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return "win-x64";
-            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+                    ? "osx-arm64"
+                    : "osx-x64";
+            return "linux-x64";
         }
+
     }
 
     extension(IConfiguration configuration) { }

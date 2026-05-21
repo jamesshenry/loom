@@ -19,25 +19,49 @@ dotnet loom --help
 
 Use `init` to generate config and workflow files
 
-```
+```bash
 dotnet loom init --force
 ```
 
-Invoke pipeline by passing target as arg
+## Subcommands
 
-```
+Loom provides subcommands for each build stage. You can run `dotnet loom [command] --help` for specific options.
+
+### Test
+
+Run your test suite:
+
+```bash
 dotnet loom test
 ```
 
-configure loom.json to publish/pack artifacts
+### Build & Publish
 
-```
+Configure `loom.json` to define artifacts, then build or publish them:
+
+```bash
+dotnet loom build
 dotnet loom publish
 ```
 
-artifacts are not cleaned unless explicitly set
+### Clean & Fresh Runs
 
+Manual clean:
+
+```bash
+dotnet loom clean
 ```
-dotnet loom clean # The Clean module
-dotnet release --clean # Prepends the Clean module to pipeline
+
+Prepend the `Clean` module to any pipeline run using the `--fresh` flag:
+
+```bash
+dotnet loom release --fresh
+```
+
+### Global Options
+
+Most commands support standard overrides:
+
+```bash
+dotnet loom build --rid win-x64
 ```

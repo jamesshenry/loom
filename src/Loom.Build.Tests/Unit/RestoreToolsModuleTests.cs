@@ -1,26 +1,20 @@
 using Loom.Config;
 using Loom.Modules;
-using Microsoft.Extensions.Configuration;
+
 using Microsoft.Extensions.DependencyInjection;
-using ModularPipelines;
+
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
+
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
 
 public class RestoreToolsModuleTests
 {
-    private static string CreateTemporaryDirectory()
-    {
-        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDirectory);
-        return tempDirectory;
-    }
-
     private static LoomSettings CreateSettings(
         bool requiresMinVer = true,
         bool requiresVelopack = false
@@ -59,27 +53,6 @@ public class RestoreToolsModuleTests
         return settings;
     }
 
-    private static PipelineBuilder CreateSilentPipelineBuilder(
-        LoomSettings settings,
-        string tempDir,
-        Mock<IDotNet> mockDotNet
-    )
-    {
-        var builder = Pipeline.CreateBuilder();
-        builder.Services.AddSingleton(new LoomContext(settings, tempDir));
-        builder.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        builder.Services.AddSingleton(mockDotNet.Object);
-        builder.Services.AddModule<RestoreToolsModule>();
-
-        builder.Options.PrintLogo = false;
-        builder.Options.ShowProgressInConsole = false;
-        builder.Options.PrintResults = false;
-        builder.Options.PrintDependencyChains = false;
-        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Silent;
-
-        return builder;
-    }
-
     private static void SetupDotNetMocks(
         Mock<IDotNet> mockDotNet,
         out List<DotNetNewOptions> newOptions,
@@ -90,18 +63,6 @@ public class RestoreToolsModuleTests
         var outNewOptions = new List<DotNetNewOptions>();
         var outRestoreOptions = new List<DotNetToolRestoreOptions>();
         var outToolOptions = new List<DotNetToolOptions>();
-
-        var emptyCommandResult = new CommandResult(
-            "",
-            "",
-            "",
-            "",
-            new Dictionary<string, string?>(),
-            DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow,
-            TimeSpan.Zero,
-            0
-        );
 
         var mockCommand = new Mock<ICommand>();
 
@@ -117,7 +78,7 @@ public class RestoreToolsModuleTests
             .Callback<DotNetNewOptions, CommandExecutionOptions, CancellationToken>(
                 (opts, _, _) => outNewOptions.Add(opts)
             )
-            .ReturnsAsync(emptyCommandResult);
+            .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
         var mockTool = new Mock<DotNetTool>(mockCommand.Object);
         mockTool
@@ -131,7 +92,7 @@ public class RestoreToolsModuleTests
             .Callback<DotNetToolRestoreOptions, CommandExecutionOptions, CancellationToken>(
                 (opts, _, _) => outRestoreOptions.Add(opts)
             )
-            .ReturnsAsync(emptyCommandResult);
+            .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
         mockTool
             .Setup(t =>
@@ -144,7 +105,7 @@ public class RestoreToolsModuleTests
             .Callback<DotNetToolOptions, CommandExecutionOptions, CancellationToken>(
                 (opts, _, _) => outToolOptions.Add(opts)
             )
-            .ReturnsAsync(emptyCommandResult);
+            .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
         mockDotNet.Setup(d => d.New).Returns(mockNew.Object);
         mockDotNet.Setup(d => d.Tool).Returns(mockTool.Object);
@@ -157,78 +118,69 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task Configure_SkipsExecution_WhenNoToolsAreRequired()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            var settings = CreateSettings(requiresMinVer: false, requiresVelopack: false);
-            var mockDotNet = new Mock<IDotNet>();
+        using var tempDir = new TempDirectory();
+        var settings = CreateSettings(requiresMinVer: false, requiresVelopack: false);
+        var mockDotNet = new Mock<IDotNet>();
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            var summary = await pipeline.RunAsync();
-            var result = await summary.GetModule<RestoreToolsModule>();
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreToolsModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        var summary = await pipeline.RunAsync();
+        var result = await summary.GetModule<RestoreToolsModule>();
 
-            await Assert.That(result.SkipDecisionOrDefault).IsNotNull();
-            await Assert.That(result.SkipDecisionOrDefault!.ShouldSkip).IsTrue();
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(result.SkipDecisionOrDefault).IsNotNull();
+        await Assert.That(result.SkipDecisionOrDefault!.ShouldSkip).IsTrue();
     }
 
     [Test]
     public async Task ExecuteAsync_CreatesManifest_WhenManifestIsMissing()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
-            var mockDotNet = new Mock<IDotNet>();
+        using var tempDir = new TempDirectory();
+        var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
+        var mockDotNet = new Mock<IDotNet>();
 
-            SetupDotNetMocks(mockDotNet, out var newOptions, out _, out _);
+        SetupDotNetMocks(mockDotNet, out var newOptions, out _, out _);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            await pipeline.RunAsync();
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreToolsModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        await pipeline.RunAsync();
 
-            await Assert.That(newOptions).Count().IsEqualTo(1);
-            await Assert.That(newOptions[0].Arguments).IsNotNull();
-            await Assert.That(newOptions[0].Arguments!).Contains("tool-manifest");
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(newOptions).Count().IsEqualTo(1);
+        await Assert.That(newOptions[0].Arguments).IsNotNull();
+        await Assert.That(newOptions[0].Arguments!).Contains("tool-manifest");
     }
 
     [Test]
     public async Task ExecuteAsync_DoesNotCreateManifest_WhenManifestExists()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            // Create a fake manifest
-            System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+        using var tempDir = new TempDirectory();
+        // Create a fake manifest
+        System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
 
-            var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
-            var mockDotNet = new Mock<IDotNet>();
+        var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
+        var mockDotNet = new Mock<IDotNet>();
 
-            SetupDotNetMocks(mockDotNet, out var newOptions, out _, out _);
+        SetupDotNetMocks(mockDotNet, out var newOptions, out _, out _);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            await pipeline.RunAsync();
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreToolsModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        await pipeline.RunAsync();
 
-            await Assert.That(newOptions).IsEmpty();
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(newOptions).IsEmpty();
     }
 
     // [Test]
@@ -267,55 +219,49 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task ExecuteAsync_RestoresTools_AtEndOfExecution()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+        using var tempDir = new TempDirectory();
+        System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
 
-            var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
-            var mockDotNet = new Mock<IDotNet>();
+        var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
+        var mockDotNet = new Mock<IDotNet>();
 
-            SetupDotNetMocks(mockDotNet, out _, out var restoreOptions, out _);
+        SetupDotNetMocks(mockDotNet, out _, out var restoreOptions, out _);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            await pipeline.RunAsync();
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreToolsModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        await pipeline.RunAsync();
 
-            await Assert.That(restoreOptions).Count().IsEqualTo(1);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(restoreOptions).Count().IsEqualTo(1);
     }
 
     [Test]
     public async Task ExecuteAsync_ReturnsRestoreToolsResult_WrappingCommandResult()
     {
-        var tempDir = CreateTemporaryDirectory();
-        try
-        {
-            System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+        using var tempDir = new TempDirectory();
+        System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
 
-            var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
-            var mockDotNet = new Mock<IDotNet>();
+        var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
+        var mockDotNet = new Mock<IDotNet>();
 
-            SetupDotNetMocks(mockDotNet, out _, out _, out _);
+        SetupDotNetMocks(mockDotNet, out _, out _, out _);
 
-            var builder = CreateSilentPipelineBuilder(settings, tempDir, mockDotNet);
-            var pipeline = await builder.BuildAsync();
-            var summary = await pipeline.RunAsync();
-            var result = await summary.GetModule<RestoreToolsModule>();
-            var val = result.ValueOrDefault;
+        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<RestoreToolsModule>();
+            });
+        var pipeline = await builder.BuildAsync();
+        var summary = await pipeline.RunAsync();
+        var result = await summary.GetModule<RestoreToolsModule>();
+        var val = result.ValueOrDefault;
 
-            await Assert.That(val).IsNotNull();
-            await Assert.That(val!.CommandResult).IsNotNull(); // Checking it wrapped it in `RestoreToolsResult` properly
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        await Assert.That(val).IsNotNull();
+        await Assert.That(val!.CommandResult).IsNotNull(); // Checking it wrapped it in `RestoreToolsResult` properly
     }
 }

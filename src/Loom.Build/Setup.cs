@@ -1,7 +1,10 @@
 using System.Text.Json;
+
 using Loom.Config;
+
 using NJsonSchema;
 using NJsonSchema.Generation;
+
 using Spectre.Console;
 
 namespace Loom;
@@ -140,12 +143,11 @@ public static class Setup
             Global = new GlobalSettings(),
         };
 
-        var jsonContent = JsonSerializer.Serialize(loom, LoomSettingsContext.Default.LoomSettings);
 
-        var finalJson = $$"""
-{
-  "$schema": "./loom.schema.json",{{jsonContent[1..]}}
-""";
+        var jsonNode = JsonSerializer.SerializeToNode(loom, LoomSettingsContext.Default.LoomSettings)!.AsObject();
+        jsonNode.Insert(0, "$schema", "./loom.schema.json"); // .Insert() is available in .NET 8+
+
+        var finalJson = jsonNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
 
         var destinationLoomFile = Path.Combine(buildDir, "loom.json");
 

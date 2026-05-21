@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+
 using Loom.Config;
 using Loom.MinVer;
 using Loom.MinVer.Options;
@@ -22,27 +23,18 @@ public class MinVerModule(LoomContext loomContext) : Module<MinVerResult>
     {
         var prefixes = loomContext
             .Artifacts.Values.Select(a => a.TagPrefix ?? string.Empty)
-            .Distinct()
-            .ToList();
+            .Append(string.Empty)
+            .Distinct();
 
-        if (!prefixes.Contains(string.Empty))
+
+        var tasks = prefixes.Select(async prefix =>
         {
-            prefixes.Add(string.Empty);
-        }
+            var tagPrefix = string.IsNullOrEmpty(prefix) ? null : prefix;
+            var version = await context.MinVer().Run(new DotNetMinVerOptions { TagPrefix = tagPrefix, DefaultPreReleaseIdentifiers = loomContext.DefaultPreReleaseIdentifiers });
+            return KeyValuePair.Create(prefix, version);
+        });
+        var results = await Task.WhenAll(tasks);
 
-        var results = new ConcurrentDictionary<string, MinVerVersion>();
-
-        await Task.WhenAll(
-            prefixes.Select(async prefix =>
-            {
-                var tagPrefix = string.IsNullOrEmpty(prefix) ? null : prefix;
-                var options = new DotNetMinVerOptions() { TagPrefix = tagPrefix };
-                var version = await context.MinVer().Run(options);
-
-                results[prefix] = version;
-            })
-        );
-
-        return new MinVerResult(results);
+        return new MinVerResult(results.ToDictionary());
     }
 }

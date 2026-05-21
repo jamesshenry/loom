@@ -1,5 +1,7 @@
 using Loom.Config;
+
 using ModularPipelines.GitHub.Extensions;
+
 using Octokit;
 
 namespace Loom.Modules;
@@ -100,37 +102,36 @@ public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>
                 }
 
                 var files = folder.GetFiles(f => true);
-                foreach (var file in files)
+
+                var uploadTasks = files.Where(f => !f.Name.StartsWith("assets", StringComparison.OrdinalIgnoreCase))
+                .Select(async file =>
                 {
-                    var fileName = file.Name;
-
-                    if (fileName.StartsWith("assets.", StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    var existingAsset = release.Assets.FirstOrDefault(a =>
-                        a.Name.Equals(fileName, StringComparison.OrdinalIgnoreCase)
-                    );
+                    var existingAsset = release.Assets.FirstOrDefault(a => a.Name.Equals(file, StringComparison.OrdinalIgnoreCase));
                     if (existingAsset != null)
                     {
                         context.Logger.LogInformation(
                             "Asset {FileName} already exists. Deleting prior asset...",
-                            fileName
+                            file
                         );
                         await client.Repository.Release.DeleteAsset(owner, repo, existingAsset.Id);
                     }
 
-                    context.Logger.LogInformation("Uploading asset {FileName}...", fileName);
+                    context.Logger.LogInformation("Uploading asset {FileName}...", file);
 
                     await using var stream = file.GetStream();
                     var assetUpload = new ReleaseAssetUpload
                     {
-                        FileName = fileName,
+                        FileName = file,
                         ContentType = "application/octet-stream",
                         RawData = stream,
                     };
 
                     await client.Repository.Release.UploadAsset(release, assetUpload, ct);
-                }
+
+                });
+
+                await Task.WhenAll(uploadTasks);
+
                 context.Logger.LogInformation(
                     "Successfully uploaded {Count} assets to GitHub Release.",
                     files.Count()

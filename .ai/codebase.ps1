@@ -2,12 +2,28 @@
 # This script creates a comprehensive text file containing the directory structure
 # and all source code files from your project's source directory for AI processing.
 #
-# Customize the $sourceDirectory path to match your project's structure.
+# You can target a specific subfolder with -SearchDirectory (relative to repo root)
+# or provide an absolute path.
+
+param(
+    [string]$SearchDirectory = 'src'
+)
 
 $repoRoot = git rev-parse --show-toplevel
 Write-Host "Repository root: $repoRoot"
 
-$sourceDirectory = Join-Path $repoRoot 'src' 
+$sourceDirectory = if ([System.IO.Path]::IsPathRooted($SearchDirectory)) {
+    $SearchDirectory
+}
+else {
+    Join-Path $repoRoot $SearchDirectory
+}
+
+if (-not (Test-Path -Path $sourceDirectory -PathType Container)) {
+    throw "Search directory does not exist or is not a folder: $sourceDirectory"
+}
+
+$sourceDirectory = (Resolve-Path $sourceDirectory).Path
 Write-Host "Source directory: $sourceDirectory"
 
 $outputDir = "$repoRoot/.ai/outputs"
@@ -35,20 +51,22 @@ Set-Content -Path $outputPath -Value $contextBlock
 
 # Extension -> language mapping
 $languageMap = @{
-    '.cs'   = 'csharp'
-    '.ps1'  = 'powershell'
-    '.json' = 'json'
-    '.xml'  = 'xml'
-    '.yml'  = 'yaml'
-    '.yaml' = 'yaml'
-    '.md'   = 'markdown'
-    '.sh'   = 'bash'
-    '.ts'   = 'typescript'
-    '.js'   = 'javascript'
+    '.cs'    = 'csharp'
+    '.razor' = 'razor'
+    '.ps1'   = 'powershell'
+    '.json'  = 'json'
+    '.xml'   = 'xml'
+    '.yml'   = 'yaml'
+    '.yaml'  = 'yaml'
+    '.md'    = 'markdown'
+    '.sh'    = 'bash'
+    '.ts'    = 'typescript'
+    '.js'    = 'javascript'
 }
 
+$keys = $languageMap.Keys | ForEach-Object { "*$_" }
 # Grab all files, filtering out the excluded directories
-$allFiles = Get-ChildItem -Path $sourceDirectory -Recurse -File -Include *.cs, *.ps1, *.json, *.xml, *.yml, *.yaml, *.md, *.sh, *.ts, *.js | Where-Object {
+$allFiles = Get-ChildItem -Path $sourceDirectory -Recurse -File -Include $keys | Where-Object {
     $_.FullName -notmatch $excludePattern
 }
 
