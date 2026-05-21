@@ -23,3 +23,9 @@ public class GlobalSettings
         return dict;
     }
 }
+
+public record ExecutionRequest(
+    BuildTarget Target,
+    string? Rid = null,
+    bool Fresh = false
+);

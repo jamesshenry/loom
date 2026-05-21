@@ -12,42 +12,65 @@ namespace Loom;
 public class Commands
 {
     /// <summary>
-    /// Default command runs loom against loom.json run.target or BuildTarget.Build
+    /// Default command runs loom against BuildTarget.Build
     /// </summary>
-    /// <param name="rid">Override global rid set in loom.json</param>
-    /// <param name="target">Build target to run</param>
-    /// <param name="fresh">--fresh|--clean, Prepend Clean target to start of pipeline</param>
+    /// <param name="fresh">-f|--clean, Prepend Clean target to start of pipeline</param>
     /// <returns></returns>
     [Command("")]
     public async Task Root(
         CancellationToken ct,
-        [HideDefaultValue] string? rid = null,
-        [HideDefaultValue, Argument] BuildTarget? target = null,
         bool fresh = false
     )
     {
-        var cliOptions = new GlobalSettings { Rid = rid, Target = target };
-
-        var loomPath = LoomConfig.ResolveLoomJsonPath();
-
-        if (loomPath == null)
-        {
-            AnsiConsole.MarkupLine("[red]Error:[/] loom.json not found.");
-            AnsiConsole.MarkupLine("Run [yellow]dotnet loom init[/] to get started.");
-            Environment.Exit(1);
-        }
-
-        var builder = Pipeline.CreateBuilder();
-        var context = builder.Services.AddLoomContext(loomPath, cliOptions);
-
-        builder.Services.AddModules();
-        builder.Options.PrintLogo = false;
-        builder.Options.ShowProgressInConsole = true;
-        builder.Options.RunOnlyCategories = LoomConfig.GetPipelineCategories(context.Target, fresh);
-
-        var pipeline = await builder.BuildAsync();
-        await pipeline.RunAsync();
+        await PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Build, null, fresh), ct);
     }
+
+    /// <summary>
+    /// Clean project and artifacts.
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    public Task Clean(CancellationToken ct, [HideDefaultValue] string? rid = null)
+        => PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Clean, rid), ct);
+
+    /// <summary>
+    /// Restore project dependencies.
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="fresh">-f|--clean, Prepend Clean target to start of pipeline</param>
+    public Task Restore(CancellationToken ct, [HideDefaultValue] string? rid = null, bool fresh = false)
+        => PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Restore, rid, fresh), ct);
+
+    /// <summary>
+    /// Build project and artifacts.
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="fresh">-f|--clean, Prepend Clean target to start of pipeline</param>
+    public Task Build(CancellationToken ct, [HideDefaultValue] string? rid = null, bool fresh = false)
+        => PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Build, rid, fresh), ct);
+
+    /// <summary>
+    /// Run tests.
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="fresh">-f|--clean, Prepend Clean target to start of pipeline</param>
+    public Task Test(CancellationToken ct, [HideDefaultValue] string? rid = null, bool fresh = false)
+        => PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Test, rid, fresh), ct);
+
+    /// <summary>
+    /// Build and package project.
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="fresh">-f|--clean, Prepend Clean target to start of pipeline</param>
+    public Task Publish(CancellationToken ct, [HideDefaultValue] string? rid = null, bool fresh = false)
+        => PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Publish, rid, fresh), ct);
+
+    /// <summary>
+    /// Build, package, and release project.
+    /// </summary>
+    /// <param name="rid">Override global rid set in loom.json</param>
+    /// <param name="fresh">-f|--clean, Prepend Clean target to start of pipeline</param>
+    public Task Release(CancellationToken ct, [HideDefaultValue] string? rid = null, bool fresh = false)
+        => PipelineRunner.ExecuteAsync(new ExecutionRequest(BuildTarget.Release, rid, fresh), ct);
 
     [Command("init")]
     public async Task Init(bool force = false)
