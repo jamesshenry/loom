@@ -1,10 +1,12 @@
 using Loom.Config;
+using Loom.MinVer;
 using Loom.Modules;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using ModularPipelines;
+using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Models;
@@ -46,7 +48,12 @@ public class PublishModuleTests
             resolved.Add(new ResolvedArtifact("MyApp", myApp, "win-x64", IsAot: false, CanBuildOnHost: true));
 
             // Artifact 2: No RID, falls back to Global "linux-x64"
-            var myVelo = new ArtifactSettings { Type = ArtifactType.Velopack, Project = "MyVelopack.csproj" };
+            var myVelo = new ArtifactSettings
+            {
+                Type = ArtifactType.Velopack,
+                Project = "MyVelopack.csproj",
+                TagPrefix = "v",
+            };
             settings.Artifacts.Add("MyVelopack", myVelo);
             resolved.Add(new ResolvedArtifact("MyVelopack", myVelo, "linux-x64", IsAot: false, CanBuildOnHost: true));
         }
@@ -73,6 +80,7 @@ public class PublishModuleTests
         builder.Services.AddSingleton(context);
         builder.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         builder.Services.AddSingleton(mockDotNet.Object);
+        builder.Services.AddModule<FakePublishMinVerModule>();
         builder.Services.AddModule<PublishModule>();
 
         builder.Options.PrintLogo = false;
@@ -191,6 +199,24 @@ public class PublishModuleTests
                     )
                 )
                 .IsTrue();
+
+            var appOptions = capturedOptions.First(x => x.ProjectSolution == "MyApp.csproj");
+            var veloOptions = capturedOptions.First(x => x.ProjectSolution == "MyVelopack.csproj");
+
+            var appProperties = appOptions.Properties!.ToDictionary(x => x.Key, x => x.Value);
+            var veloProperties = veloOptions.Properties!.ToDictionary(x => x.Key, x => x.Value);
+
+            await Assert.That(appProperties["AssemblyVersion"]).IsEqualTo("1.0.0.0");
+            await Assert.That(appProperties["FileVersion"]).IsEqualTo("1.2.3.0");
+            await Assert.That(appProperties["InformationalVersion"]).IsEqualTo("1.2.3");
+            await Assert.That(appProperties["PackageVersion"]).IsEqualTo("1.2.3");
+            await Assert.That(appProperties["Version"]).IsEqualTo("1.2.3");
+
+            await Assert.That(veloProperties["AssemblyVersion"]).IsEqualTo("1.0.0.0");
+            await Assert.That(veloProperties["FileVersion"]).IsEqualTo("1.2.4.0");
+            await Assert.That(veloProperties["InformationalVersion"]).IsEqualTo("1.2.4");
+            await Assert.That(veloProperties["PackageVersion"]).IsEqualTo("1.2.4");
+            await Assert.That(veloProperties["Version"]).IsEqualTo("1.2.4");
         }
         finally
         {
@@ -237,4 +263,24 @@ public class PublishModuleTests
                 Directory.Delete(tempDir, true);
         }
     }
+}
+
+public class FakePublishMinVerModule : MinVerModule
+{
+    public FakePublishMinVerModule(LoomContext loomContext)
+        : base(loomContext) { }
+
+    protected override Task<MinVerResult?> ExecuteAsync(
+        IModuleContext context,
+        CancellationToken ct
+    ) =>
+        Task.FromResult<MinVerResult?>(
+            new MinVerResult(
+                new Dictionary<string, MinVerVersion>
+                {
+                    [string.Empty] = new MinVerVersion("1.2.3"),
+                    ["v"] = new MinVerVersion("1.2.4"),
+                }
+            )
+        );
 }

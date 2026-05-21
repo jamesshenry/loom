@@ -75,17 +75,7 @@ public class RestoreModuleTests
             var capturedOptions = new List<DotNetRestoreOptions>();
             var capturedExecOptions = new List<CommandExecutionOptions>();
 
-            var emptyCommandResult = new CommandResult(
-                "",
-                "",
-                "",
-                "",
-                new Dictionary<string, string?>(),
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                TimeSpan.Zero,
-                0
-            );
+            var emptyCommandResult = TestHelpers.EmptyCommandResult;
 
             mockDotNet
                 .Setup(d =>
@@ -129,17 +119,7 @@ public class RestoreModuleTests
         {
             var settings = CreateSettings();
             var mockDotNet = new Mock<IDotNet>();
-            var emptyCommandResult = new CommandResult(
-                "",
-                "",
-                "",
-                "",
-                new Dictionary<string, string?>(),
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                TimeSpan.Zero,
-                0
-            );
+            var emptyCommandResult = TestHelpers.EmptyCommandResult;
 
             mockDotNet
                 .Setup(d =>

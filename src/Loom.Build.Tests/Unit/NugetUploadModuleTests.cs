@@ -1,8 +1,10 @@
 using Loom.Config;
 using Loom.Modules;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
 using ModularPipelines;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
@@ -11,7 +13,9 @@ using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
 using ModularPipelines.Options;
+
 using Moq;
+
 using File = ModularPipelines.FileSystem.File;
 
 namespace Loom.Build.Tests.Unit;
@@ -145,17 +149,7 @@ public class NugetUploadModuleTests
 
             var mockDotNet = new Mock<IDotNet>();
 
-            var emptyCommandResult = new CommandResult(
-                "",
-                "",
-                "",
-                "",
-                new Dictionary<string, string?>(),
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                TimeSpan.Zero,
-                0
-            );
+            var emptyCommandResult = TestHelpers.EmptyCommandResult;
 
             var mockCommand = new Mock<ICommand>();
             var mockNuget = new Mock<DotNetNuget>(mockCommand.Object);

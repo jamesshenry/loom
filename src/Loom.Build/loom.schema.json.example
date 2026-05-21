@@ -69,6 +69,10 @@
           "type": "boolean",
           "description": "Whether to create a GitHub release during a release."
         },
+        "defaultPreReleaseIdentifiers": {
+          "type": "string",
+          "description": "Maps to MinVer.DefaultPreReleaseIdentifiers"
+        },
         "enableVelopackRelease": {
           "type": "boolean",
           "description": "Whether to create velopack packages during a release."

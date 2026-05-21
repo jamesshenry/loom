@@ -1,7 +1,9 @@
 using Loom.MinVer;
 using Loom.Modules;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using ModularPipelines;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
@@ -9,6 +11,7 @@ using ModularPipelines.DotNet.Services;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
+
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -155,8 +158,12 @@ public class PackModuleTests
 
             foreach (var options in capturedOptions)
             {
-                var version = options.Properties!.First(p => p.Key == "Version").Value;
-                await Assert.That(version).IsEqualTo("1.2.3");
+                var properties = options.Properties!.ToDictionary(p => p.Key, p => p.Value);
+                await Assert.That(properties["AssemblyVersion"]).IsEqualTo("1.0.0.0");
+                await Assert.That(properties["FileVersion"]).IsEqualTo("1.2.3.0");
+                await Assert.That(properties["InformationalVersion"]).IsEqualTo("1.2.3");
+                await Assert.That(properties["PackageVersion"]).IsEqualTo("1.2.3");
+                await Assert.That(properties["Version"]).IsEqualTo("1.2.3");
             }
 
             var packResult = moduleResult.ValueOrDefault!;
@@ -228,7 +235,12 @@ public class PackModuleTests
             await pipeline.RunAsync();
 
             await Assert.That(captured).IsNotNull();
-            var version = captured!.Properties!.First(p => p.Key == "Version").Value;
+            var properties = captured!.Properties!.ToDictionary(p => p.Key, p => p.Value);
+            await Assert.That(properties["AssemblyVersion"]).IsEqualTo("1.0.0.0");
+            await Assert.That(properties["FileVersion"]).IsEqualTo("1.2.4.0");
+            await Assert.That(properties["InformationalVersion"]).IsEqualTo("1.2.4");
+            await Assert.That(properties["PackageVersion"]).IsEqualTo("1.2.4");
+            var version = properties["Version"];
             // FakeMinVerModule returns "1.2.4" for prefix "v"
             await Assert.That(version).IsEqualTo("1.2.4");
         }

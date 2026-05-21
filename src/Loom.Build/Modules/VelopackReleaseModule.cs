@@ -76,29 +76,28 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                 artifact.Rid
             );
 
-            VelopackPackBaseOptions velopackPackOptions = new()
+            VelopackPackBaseOptions velopackPackOptions = artifact.Rid.ToLower() switch
             {
-                PackId = packId,
-                PackVersion = version.ToString(),
-                PackDir = publishDir,
-                OutputDir = releaseDir,
-                Runtime = artifact.Rid,
+                var r when r.StartsWith("win") => new DotNetVelopackPackWinOptions
+                {
+                    PackId = packId,
+                    PackVersion = version.ToString(),
+                    PackDir = publishDir,
+                    OutputDir = releaseDir,
+                    Runtime = artifact.Rid,
+                    Shortcuts = "None"
+                },
+                var r when r.StartsWith("linux") => new DotNetVelopackPackLinuxOptions
+                {
+                    PackId = packId,
+                    PackVersion = version.ToString(),
+                    PackDir = publishDir,
+                    OutputDir = releaseDir,
+                    Runtime = artifact.Rid
+                },
+                _ => throw new NotSupportedException($"Velopack packaging not supported for {artifact.Rid}")
             };
 
-            velopackPackOptions = artifact.Rid.ToLower() switch
-            {
-                var r when r.StartsWith("win") => new DotNetVelopackPackWinOptions() with
-                {
-                    PackId = velopackPackOptions.PackId,
-                    PackVersion = velopackPackOptions.PackVersion,
-                    PackDir = velopackPackOptions.PackDir,
-                    OutputDir = velopackPackOptions.OutputDir,
-                    Runtime = velopackPackOptions.Runtime,
-                    Shortcuts = "None",
-                },
-                var r when r.StartsWith("linux") => velopackPackOptions,
-                _ => throw new NotSupportedException("Switch case not supported"),
-            };
             await context
                 .Velopack()
                 .ExecuteAsync(

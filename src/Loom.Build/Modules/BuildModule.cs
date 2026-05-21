@@ -6,6 +6,7 @@ public record BuildResult(string? Output);
 
 [ModuleCategory("Build")]
 [DependsOn<RestoreModule>(Optional = true)]
+[DependsOn<MinVerModule>(Optional = true)]
 public class BuildModule(LoomContext buildContext) : Module<BuildResult>
 {
     protected override async Task<BuildResult?> ExecuteAsync(
@@ -13,6 +14,12 @@ public class BuildModule(LoomContext buildContext) : Module<BuildResult>
         CancellationToken ct
     )
     {
+        var minVerModule = await context.GetModule<MinVerModule>();
+        var minVerResult = minVerModule.ValueOrDefault;
+        var versionProperties = PublishHelpers.CreateVersionProperties(
+            PublishHelpers.ResolveVersion(minVerResult)
+        );
+
         var result = await context
             .DotNet()
             .Build(
@@ -21,6 +28,7 @@ public class BuildModule(LoomContext buildContext) : Module<BuildResult>
                     ProjectSolution = buildContext.Solution,
                     NoRestore = true,
                     Configuration = buildContext.Configuration,
+                    Properties = versionProperties,
                 },
                 executionOptions: new CommandExecutionOptions
                 {

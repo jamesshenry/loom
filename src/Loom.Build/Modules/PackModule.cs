@@ -1,6 +1,7 @@
 using Loom.Config;
-using Loom.MinVer;
+
 using ModularPipelines.FileSystem;
+
 using File = ModularPipelines.FileSystem.File;
 using SearchOption = System.IO.SearchOption;
 
@@ -49,15 +50,8 @@ public class PackModule(LoomContext buildContext) : Module<PackResult>
                 artifactSettings.Project
             );
 
-            var version = !string.IsNullOrWhiteSpace(artifactSettings.Version)
-                ? MinVerVersion.From(artifactSettings.Version)
-                : minVerResult?.GetVersion(artifactSettings.TagPrefix);
-
-            var properties = new List<KeyValue>();
-            if (!string.IsNullOrWhiteSpace(version!.ToString()))
-            {
-                properties.Add(new("Version", version.ToString()));
-            }
+            var version = PublishHelpers.ResolveVersion(artifactSettings, minVerResult);
+            var properties = PublishHelpers.CreateVersionProperties(version);
 
             await context
                 .DotNet()
@@ -68,7 +62,7 @@ public class PackModule(LoomContext buildContext) : Module<PackResult>
                         Configuration = buildContext.Configuration,
                         Output = outputDir,
                         NoBuild = true,
-                        Properties = properties.Count > 0 ? properties : null,
+                        Properties = properties,
                     },
                     executionOptions: new CommandExecutionOptions
                     {
