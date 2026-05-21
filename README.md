@@ -39,5 +39,5 @@ artifacts are not cleaned unless explicitly set
 
 ```
 dotnet loom clean # The Clean module
-dotnet release --clean # Prepends the Clean module to pipeline
+dotnet release --fresh # Prepends the Clean module to pipeline
 ```

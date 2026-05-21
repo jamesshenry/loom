@@ -1,7 +1,10 @@
 #pragma warning disable CA1822 // Mark members as static
 using ConsoleAppFramework;
+
 using Loom.Config;
+
 using ModularPipelines;
+
 using Spectre.Console;
 
 namespace Loom;
@@ -13,7 +16,7 @@ public class Commands
     /// </summary>
     /// <param name="rid">Override global rid set in loom.json</param>
     /// <param name="target">Build target to run</param>
-    /// <param name="fresh">--clean|Prepend Clean target to start of pipeline</param>
+    /// <param name="fresh">--fresh|--clean, Prepend Clean target to start of pipeline</param>
     /// <returns></returns>
     [Command("")]
     public async Task Root(
