@@ -1,12 +1,11 @@
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
-
+using ModularPipelines;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
+using ModularPipelines.FileSystem;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -39,8 +38,6 @@ public class BuildModuleTests
         var capturedOptions = new List<DotNetBuildOptions>();
         var capturedExecOptions = new List<CommandExecutionOptions>();
 
-
-
         mockDotNet
             .Setup(d =>
                 d.Build(
@@ -58,13 +55,15 @@ public class BuildModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -85,7 +84,6 @@ public class BuildModuleTests
 
         var capturedOptions = new List<DotNetBuildOptions>();
 
-
         mockDotNet
             .Setup(d =>
                 d.Build(
@@ -102,13 +100,15 @@ public class BuildModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -124,7 +124,6 @@ public class BuildModuleTests
 
         var capturedOptions = new List<DotNetBuildOptions>();
 
-
         mockDotNet
             .Setup(d =>
                 d.Build(
@@ -141,13 +140,15 @@ public class BuildModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -162,8 +163,6 @@ public class BuildModuleTests
         var mockDotNet = new Mock<IDotNet>();
         DotNetBuildOptions? capturedOptions = null;
 
-
-
         mockDotNet
             .Setup(d =>
                 d.Build(
@@ -172,19 +171,23 @@ public class BuildModuleTests
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<DotNetBuildOptions, CommandExecutionOptions, CancellationToken>((opts, _, _) =>
-            {
-                capturedOptions = opts;
-            })
+            .Callback<DotNetBuildOptions, CommandExecutionOptions, CancellationToken>(
+                (opts, _, _) =>
+                {
+                    capturedOptions = opts;
+                }
+            )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 

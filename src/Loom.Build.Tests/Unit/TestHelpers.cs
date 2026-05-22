@@ -1,9 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines;
-using ModularPipelines.Options;
+using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
+using ModularPipelines.Options;
+using Moq;
 
 namespace Loom.Build.Tests.Unit;
 
@@ -47,6 +48,23 @@ public static class TestHelpers
 
         return builder;
     }
+
+    public static Mock<IFileSystemProvider> AddMockFileSystem(this PipelineBuilder builder)
+    {
+        var mockProvider = new Mock<IFileSystemProvider>();
+
+        // Default: nothing exists unless explicitly setup
+        mockProvider.Setup(p => p.FileExists(It.IsAny<string>())).Returns(false);
+        mockProvider.Setup(p => p.DirectoryExists(It.IsAny<string>())).Returns(false);
+        mockProvider
+            .Setup(p =>
+                p.EnumerateFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>())
+            )
+            .Returns(new List<string>());
+
+        builder.Services.AddSingleton(mockProvider.Object);
+        return mockProvider;
+    }
 }
 
 public sealed class FakeTimeProvider : TimeProvider
@@ -80,7 +98,10 @@ public sealed class TempDirectory : IDisposable
 
     public TempDirectory()
     {
-        Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+        Path = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            System.IO.Path.GetRandomFileName()
+        );
         Directory.CreateDirectory(Path);
     }
 
