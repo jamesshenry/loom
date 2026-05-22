@@ -4,7 +4,7 @@ using ModularPipelines.FileSystem;
 
 namespace Loom.Modules;
 
-public record TestResult(CommandResult? Result, Folder CoverageFilePath);
+public record TestResult(CommandResult? Result, string CoverageFilePath);
 
 [ModuleCategory("Test")]
 [DependsOn<BuildModule>(Optional = true)]
@@ -18,12 +18,12 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
             .Create()
             .WithSkipWhen(async ctx =>
             {
-                var globalJsonPath = Path.Combine(buildContext.WorkingDirectory, "global.json");
-
-                // 1. Get the mockable provider from DI
                 var fsProvider = ctx.GetService<IFileSystemProvider>();
+                var globalJsonPath = fsProvider.Combine(
+                    buildContext.WorkingDirectory,
+                    "global.json"
+                );
 
-                // 2. Use the mockable FileExists method BEFORE attempting to read
                 if (!fsProvider.FileExists(globalJsonPath))
                 {
                     return SkipDecision.Skip(
@@ -31,7 +31,6 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
                     );
                 }
 
-                // 3. Use the mockable ReadAllTextAsync method
                 var content = await fsProvider.ReadAllTextAsync(
                     globalJsonPath,
                     CancellationToken.None
@@ -47,14 +46,14 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
         CancellationToken ct
     )
     {
-        var testResultsFolder = context.Files.GetFolder(
-            Path.Combine(buildContext.WorkingDirectory, "TestResults")
-        );
+        var fs = context.GetService<IFileSystemProvider>();
+        var testResultsPath = fs.Combine(buildContext.WorkingDirectory, "TestResults");
 
-        if (!testResultsFolder.Exists)
+        if (!fs.DirectoryExists(testResultsPath))
         {
-            testResultsFolder.Create();
+            fs.CreateDirectory(testResultsPath);
         }
+        fs.DeleteDirectory(testResultsPath, false);
         context.Logger.LogInformation("Running tests for {Solution}", buildContext.Solution);
 
         var result = await context
@@ -72,7 +71,7 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
                         "--ignore-exit-code",
                         "8",
                         "--results-directory",
-                        testResultsFolder.Path,
+                        testResultsPath,
                     ],
                 },
                 executionOptions: new CommandExecutionOptions
@@ -82,7 +81,7 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
                 cancellationToken: ct
             );
 
-        return new TestResult(result, testResultsFolder);
+        return new TestResult(result, testResultsPath);
     }
 
     internal static SkipDecision ValidateMicrosoftTestingPlatform(string globalJsonContent)

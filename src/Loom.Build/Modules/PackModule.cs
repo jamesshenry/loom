@@ -1,7 +1,5 @@
 using Loom.Config;
-
 using ModularPipelines.FileSystem;
-
 using File = ModularPipelines.FileSystem.File;
 using SearchOption = System.IO.SearchOption;
 
@@ -29,11 +27,12 @@ public class PackModule(LoomContext buildContext) : Module<PackResult>
         CancellationToken ct
     )
     {
+        var provider = context.GetService<IFileSystemProvider>();
         var nugetArtifacts = buildContext
             .Artifacts.Where(a => a.Value.Type == ArtifactType.Nuget)
             .ToList();
 
-        var outputDir = Path.Combine(
+        var outputDir = provider.Combine(
             buildContext.WorkingDirectory,
             buildContext.ArtifactsDirectory,
             "nuget"
@@ -72,15 +71,13 @@ public class PackModule(LoomContext buildContext) : Module<PackResult>
                 );
         }
 
-        var provider = context.Services.Get<IFileSystemProvider>();
-
         var nupkgs = provider
             .EnumerateFiles(outputDir, "*", SearchOption.TopDirectoryOnly)
             .Where(f =>
                 f.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase)
                 || f.EndsWith(".snupkg", StringComparison.OrdinalIgnoreCase)
             );
-        var files = nupkgs.Select(f => context.Files.GetFile(f)).ToList();
+        var files = nupkgs.Select(f => new File(f)).ToList();
 
         return new PackResult(files);
     }

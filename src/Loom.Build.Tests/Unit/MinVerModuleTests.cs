@@ -51,91 +51,82 @@ public class MinVerModuleTests
     [Test]
     public async Task ExecuteAsync_ResolvesMultipleArtifactPrefixes()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var settings = CreateSettings(
-                new Dictionary<string, string?> { ["App1"] = "v1-", ["App2"] = "v2-" }
-            );
-            var loomContext = new LoomContext(settings, tempDir);
+        const string tempDir = "/fake/workspace";
+        var settings = CreateSettings(
+            new Dictionary<string, string?> { ["App1"] = "v1-", ["App2"] = "v2-" }
+        );
+        var loomContext = new LoomContext(settings, tempDir);
 
-            var mockMinVer = new Mock<IMinVer>();
-            mockMinVer
-                .Setup(x =>
-                    x.Run(
-                        It.IsAny<MinVerBaseOptions?>(),
-                        It.IsAny<CommandExecutionOptions?>(),
-                        It.IsAny<CancellationToken>()
-                    )
+        var mockMinVer = new Mock<IMinVer>();
+        mockMinVer
+            .Setup(x =>
+                x.Run(
+                    It.IsAny<MinVerBaseOptions?>(),
+                    It.IsAny<CommandExecutionOptions?>(),
+                    It.IsAny<CancellationToken>()
                 )
-                .ReturnsAsync(
-                    (MinVerBaseOptions? opts, CommandExecutionOptions? _, CancellationToken _) =>
+            )
+            .ReturnsAsync(
+                (MinVerBaseOptions? opts, CommandExecutionOptions? _, CancellationToken _) =>
+                {
+                    var prefix = (opts as DotNetMinVerOptions)?.TagPrefix;
+                    var versionStr = prefix switch
                     {
-                        var prefix = (opts as DotNetMinVerOptions)?.TagPrefix;
-                        var versionStr = prefix switch
-                        {
-                            "v1-" => "1.0.1",
-                            "v2-" => "2.0.2",
-                            _ => "0.0.0",
-                        };
+                        "v1-" => "1.0.1",
+                        "v2-" => "2.0.2",
+                        _ => "0.0.0",
+                    };
 
-                        return new MinVerVersion(versionStr);
-                    }
-                );
-
-            var builder = Pipeline.CreateBuilder();
-            builder.Services.AddSingleton(loomContext);
-
-            builder.Services.AddSingleton(mockMinVer.Object);
-            builder.Services.AddModule<MinVerModule>();
-
-            builder.Options.PrintLogo = false;
-            builder.Options.ShowProgressInConsole = false;
-
-            var pipeline = await builder.BuildAsync();
-            var summary = await pipeline.RunAsync();
-
-            var result = await summary.GetModule<MinVerModule>();
-            var versions = result.ValueOrDefault!;
-
-            await Assert.That(versions.GetVersion("v1-").ToString()).IsEqualTo("1.0.1");
-            await Assert.That(versions.GetVersion("v2-").ToString()).IsEqualTo("2.0.2");
-            await Assert.That(versions.GetVersion(null).ToString()).IsEqualTo("0.0.0");
-            await Assert.That(versions.GetVersion(string.Empty).ToString()).IsEqualTo("0.0.0");
-
-            mockMinVer.Verify(
-                x =>
-                    x.Run(
-                        It.Is<DotNetMinVerOptions>(o => o.TagPrefix == "v1-"),
-                        It.IsAny<CommandExecutionOptions>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
+                    return new MinVerVersion(versionStr);
+                }
             );
-            mockMinVer.Verify(
-                x =>
-                    x.Run(
-                        It.Is<DotNetMinVerOptions>(o => o.TagPrefix == "v2-"),
-                        It.IsAny<CommandExecutionOptions>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
-            );
-            mockMinVer.Verify(
-                x =>
-                    x.Run(
-                        It.Is<DotNetMinVerOptions>(o => o.TagPrefix == null),
-                        It.IsAny<CommandExecutionOptions>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
-            );
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+
+        var builder = Pipeline.CreateBuilder();
+        builder.Services.AddSingleton(loomContext);
+
+        builder.Services.AddSingleton(mockMinVer.Object);
+        builder.Services.AddModule<MinVerModule>();
+
+        builder.Options.PrintLogo = false;
+        builder.Options.ShowProgressInConsole = false;
+
+        var pipeline = await builder.BuildAsync();
+        var summary = await pipeline.RunAsync();
+
+        var result = await summary.GetModule<MinVerModule>();
+        var versions = result.ValueOrDefault!;
+
+        await Assert.That(versions.GetVersion("v1-").ToString()).IsEqualTo("1.0.1");
+        await Assert.That(versions.GetVersion("v2-").ToString()).IsEqualTo("2.0.2");
+        await Assert.That(versions.GetVersion(null).ToString()).IsEqualTo("0.0.0");
+        await Assert.That(versions.GetVersion(string.Empty).ToString()).IsEqualTo("0.0.0");
+
+        mockMinVer.Verify(
+            x =>
+                x.Run(
+                    It.Is<DotNetMinVerOptions>(o => o.TagPrefix == "v1-"),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        mockMinVer.Verify(
+            x =>
+                x.Run(
+                    It.Is<DotNetMinVerOptions>(o => o.TagPrefix == "v2-"),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        mockMinVer.Verify(
+            x =>
+                x.Run(
+                    It.Is<DotNetMinVerOptions>(o => o.TagPrefix == null),
+                    It.IsAny<CommandExecutionOptions>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 }

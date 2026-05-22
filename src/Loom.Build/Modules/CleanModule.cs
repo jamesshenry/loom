@@ -1,4 +1,6 @@
 using Loom.Config;
+using ModularPipelines.FileSystem;
+using SearchOption = System.IO.SearchOption;
 
 namespace Loom.Modules;
 
@@ -17,6 +19,8 @@ public class CleanModule(LoomContext loomContext) : Module<CleanResult>
         CancellationToken ct
     )
     {
+        var fs = context.GetService<IFileSystemProvider>();
+
         context.Logger.LogInformation(
             "Executing MSBuild Clean target for {Solution}",
             loomContext.Solution
@@ -36,31 +40,42 @@ public class CleanModule(LoomContext loomContext) : Module<CleanResult>
 
         deletionQueue.Add(
             Path.GetFullPath(
-                Path.Combine(loomContext.WorkingDirectory, loomContext.ArtifactsDirectory)
+                fs.Combine(loomContext.WorkingDirectory, loomContext.ArtifactsDirectory)
             )
         );
 
         // Add configured clean directories
         foreach (var dir in loomContext.CleanDirectories)
         {
-            deletionQueue.Add(Path.GetFullPath(Path.Combine(loomContext.WorkingDirectory, dir)));
+            deletionQueue.Add(Path.GetFullPath(fs.Combine(loomContext.WorkingDirectory, dir)));
         }
 
-        var artifactsRoot = context.Files.GetFolder(
-            Path.Combine(loomContext.WorkingDirectory, loomContext.ArtifactsDirectory)
+        var artifactsRoot = fs.Combine(
+            loomContext.WorkingDirectory,
+            loomContext.ArtifactsDirectory
         );
-        var existed = artifactsRoot.Exists;
-        long? bytesDeleted = existed ? artifactsRoot.GetFiles(x => true).Sum(f => f.Length) : null;
+        var existed = fs.DirectoryExists(artifactsRoot);
+        long? bytesDeleted = null;
+
+        if (existed)
+        {
+            bytesDeleted = 0;
+            foreach (
+                var filePath in fs.EnumerateFiles(artifactsRoot, "*", SearchOption.AllDirectories)
+            )
+            {
+                bytesDeleted += (await fs.ReadAllBytesAsync(filePath, ct)).LongLength;
+            }
+        }
 
         var orderedQueue = deletionQueue.OrderBy(x => x.Length).ToList(); // Sort so parents delete before children
 
         foreach (var path in orderedQueue)
         {
-            var folder = context.Files.GetFolder(path);
-            if (folder.Exists)
+            if (fs.DirectoryExists(path))
             {
                 context.Logger.LogInformation("Deleting clean directory: {Path}", path);
-                await folder.DeleteAsync(ct);
+                fs.DeleteDirectory(path, true);
             }
         }
 

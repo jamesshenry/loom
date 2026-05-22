@@ -1,13 +1,11 @@
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
+using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -34,21 +32,30 @@ public class CleanModuleTests
     [Test]
     public async Task ExecuteAsync_WhenDirectoryExists_DeletesDirectoryAndComputesBytesDeleted()
     {
-        using var tempDir = new TempDirectory();
-        var artifactsPath = Path.Combine(tempDir, ".artifacts");
-        Directory.CreateDirectory(artifactsPath);
-        var dummyFile = Path.Combine(artifactsPath, "dummy.txt");
-        await File.WriteAllTextAsync(dummyFile, "12345"); // 5 bytes
+        const string tempDir = "/fake/workspace";
+        var rawArtifactsPath = Path.Combine(tempDir, ".artifacts");
+        var artifactsPath = Path.GetFullPath(Path.Combine(tempDir, ".artifacts"));
 
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<CleanModule>();
-            });
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs.Setup(x => x.DirectoryExists(rawArtifactsPath)).Returns(true);
+        mockFs.Setup(x => x.DirectoryExists(artifactsPath)).Returns(true);
+        mockFs
+            .Setup(x => x.EnumerateFiles(rawArtifactsPath, "*", SearchOption.AllDirectories))
+            .Returns([Path.Combine(rawArtifactsPath, "dummy.txt")]);
+        mockFs
+            .Setup(x => x.ReadAllBytesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([1, 2, 3, 4, 5]);
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -60,22 +67,25 @@ public class CleanModuleTests
         await Assert.That(cleanResult!.Success).IsTrue();
         await Assert.That(cleanResult.DirectoryExisted).IsTrue();
         await Assert.That(cleanResult.BytesDeleted).IsEqualTo(5L);
-        await Assert.That(Directory.Exists(artifactsPath)).IsFalse();
+        mockFs.Verify(x => x.DeleteDirectory(artifactsPath, true), Times.Once);
     }
 
     [Test]
     public async Task ExecuteAsync_WhenDirectoryDoesNotExist_ReturnsSuccessAndExistedFalse()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<CleanModule>();
-            });
+            }
+        );
+        builder.AddMockFileSystem();
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -92,7 +102,7 @@ public class CleanModuleTests
     [Test]
     public async Task ExecuteAsync_ExecutesDotNetClean_AgainstWorkspaceSolution()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
         DotNetCleanOptions? capturedOptions = null;
@@ -110,12 +120,15 @@ public class CleanModuleTests
             )
             .ReturnsAsync((CommandResult)null!);
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<CleanModule>();
-            });
+            }
+        );
+        builder.AddMockFileSystem();
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -129,61 +142,69 @@ public class CleanModuleTests
     [Test]
     public async Task ExecuteAsync_WithAdditionalCleanDirectories_DeletesAllConfiguredDirectories()
     {
-        using var tempDir = new TempDirectory();
-        var artifactsPath = Path.Combine(tempDir, ".artifacts");
-        Directory.CreateDirectory(artifactsPath);
-
-        var nodeModulesPath = Path.Combine(tempDir, "node_modules");
-        Directory.CreateDirectory(nodeModulesPath);
-
-        var testResultsPath = Path.Combine(tempDir, "TestResults");
-        Directory.CreateDirectory(testResultsPath);
+        const string tempDir = "/fake/workspace";
+        var rawArtifactsPath = Path.Combine(tempDir, ".artifacts");
+        var artifactsPath = Path.GetFullPath(Path.Combine(tempDir, ".artifacts"));
+        var nodeModulesPath = Path.GetFullPath(Path.Combine(tempDir, "node_modules"));
+        var testResultsPath = Path.GetFullPath(Path.Combine(tempDir, "TestResults"));
 
         var settings = CreateSettings(["node_modules", "TestResults"]);
         var mockDotNet = new Mock<IDotNet>();
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<CleanModule>();
-            });
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs.Setup(x => x.DirectoryExists(rawArtifactsPath)).Returns(true);
+        mockFs.Setup(x => x.DirectoryExists(artifactsPath)).Returns(true);
+        mockFs.Setup(x => x.DirectoryExists(nodeModulesPath)).Returns(true);
+        mockFs.Setup(x => x.DirectoryExists(testResultsPath)).Returns(true);
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
         var result = await summary.GetModule<CleanModule>();
 
         await Assert.That(result.IsSuccess).IsTrue();
-        await Assert.That(Directory.Exists(artifactsPath)).IsFalse();
-        await Assert.That(Directory.Exists(nodeModulesPath)).IsFalse();
-        await Assert.That(Directory.Exists(testResultsPath)).IsFalse();
+        mockFs.Verify(x => x.DeleteDirectory(artifactsPath, true), Times.Once);
+        mockFs.Verify(x => x.DeleteDirectory(nodeModulesPath, true), Times.Once);
+        mockFs.Verify(x => x.DeleteDirectory(testResultsPath, true), Times.Once);
     }
 
     [Test]
     public async Task ExecuteAsync_WithOverlappingCleanDirectories_HandlesGracefullyWithoutThrowing()
     {
-        using var tempDir = new TempDirectory();
-        var artifactsPath = Path.Combine(tempDir, ".artifacts");
-        Directory.CreateDirectory(artifactsPath);
-
-        var innerPath = Path.Combine(artifactsPath, "nested");
-        Directory.CreateDirectory(innerPath);
+        const string tempDir = "/fake/workspace";
+        var rawArtifactsPath = Path.Combine(tempDir, ".artifacts");
+        var artifactsPath = Path.GetFullPath(Path.Combine(tempDir, ".artifacts"));
+        var innerPath = Path.GetFullPath(Path.Combine(artifactsPath, "nested"));
 
         var settings = CreateSettings([".artifacts/nested", ".artifacts"]); // Exact overlap and child path
         var mockDotNet = new Mock<IDotNet>();
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<CleanModule>();
-            });
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs.Setup(x => x.DirectoryExists(rawArtifactsPath)).Returns(true);
+        mockFs.Setup(x => x.DirectoryExists(artifactsPath)).Returns(true);
+        mockFs.Setup(x => x.DirectoryExists(innerPath)).Returns(true);
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
         var result = await summary.GetModule<CleanModule>();
 
         await Assert.That(result.IsSuccess).IsTrue();
-        await Assert.That(Directory.Exists(artifactsPath)).IsFalse();
+        mockFs.Verify(x => x.DeleteDirectory(artifactsPath, true), Times.Once);
+        mockFs.Verify(x => x.DeleteDirectory(innerPath, true), Times.Once);
     }
 }

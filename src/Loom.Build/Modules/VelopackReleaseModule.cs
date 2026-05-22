@@ -2,7 +2,7 @@ using Loom.Config;
 using Loom.MinVer;
 using Loom.Velopack;
 using Loom.Velopack.Options;
-
+using ModularPipelines.FileSystem;
 using static Loom.Modules.PublishHelpers;
 
 namespace Loom.Modules;
@@ -22,8 +22,9 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
             .WithSkipWhen(ctx =>
             {
                 // Only run if there are Velopack artifacts that the current host is capable of building
-                var hasCompatibleArtifacts = loomContext.ResolvedArtifacts
-                    .Any(a => a.CanBuildOnHost && a.Settings.Type == ArtifactType.Velopack);
+                var hasCompatibleArtifacts = loomContext.ResolvedArtifacts.Any(a =>
+                    a.CanBuildOnHost && a.Settings.Type == ArtifactType.Velopack
+                );
 
                 return !hasCompatibleArtifacts
                     ? SkipDecision.Skip("No compatible Velopack artifacts for this host.")
@@ -37,6 +38,7 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
         CancellationToken ct
     )
     {
+        var fs = context.GetService<IFileSystemProvider>();
         var publishModule = await context.GetModule<PublishModule>();
         var publishedArtifacts = publishModule.ValueOrDefault?.Artifacts ?? [];
 
@@ -46,17 +48,22 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
         var results = new List<VelopackArtifactResult>();
 
         // Filter for artifacts that are marked as Velopack and were compatible with this host
-        var targetArtifacts = loomContext.ResolvedArtifacts
-            .Where(a => a.CanBuildOnHost && a.Settings.Type == ArtifactType.Velopack);
+        var targetArtifacts = loomContext.ResolvedArtifacts.Where(a =>
+            a.CanBuildOnHost && a.Settings.Type == ArtifactType.Velopack
+        );
 
         foreach (var artifact in targetArtifacts)
         {
             var publishedInfo = publishedArtifacts.FirstOrDefault(p =>
-                p.ArtifactName.Equals(artifact.Name, StringComparison.OrdinalIgnoreCase));
+                p.ArtifactName.Equals(artifact.Name, StringComparison.OrdinalIgnoreCase)
+            );
 
             if (publishedInfo == null)
             {
-                context.Logger.LogWarning("Expected published output for {Name} was not found. Skipping Velopack packaging.", artifact.Name);
+                context.Logger.LogWarning(
+                    "Expected published output for {Name} was not found. Skipping Velopack packaging.",
+                    artifact.Name
+                );
                 continue;
             }
 
@@ -67,8 +74,8 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
             ArgumentNullException.ThrowIfNull(version, nameof(version));
 
             var packId = artifact.Settings.VelopackId ?? artifact.Name;
-            var publishDir = publishedInfo.PublishDirectory.Path;
-            var releaseDir = Path.Combine(
+            var publishDir = publishedInfo.PublishDirectory;
+            var releaseDir = fs.Combine(
                 loomContext.WorkingDirectory,
                 loomContext.ArtifactsDirectory,
                 "release",
@@ -85,7 +92,7 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                     PackDir = publishDir,
                     OutputDir = releaseDir,
                     Runtime = artifact.Rid,
-                    Shortcuts = "None"
+                    Shortcuts = "None",
                 },
                 var r when r.StartsWith("linux") => new DotNetVelopackPackLinuxOptions
                 {
@@ -93,9 +100,11 @@ public class VelopackReleaseModule(LoomContext loomContext) : Module<List<Velopa
                     PackVersion = version.ToString(),
                     PackDir = publishDir,
                     OutputDir = releaseDir,
-                    Runtime = artifact.Rid
+                    Runtime = artifact.Rid,
                 },
-                _ => throw new NotSupportedException($"Velopack packaging not supported for {artifact.Rid}")
+                _ => throw new NotSupportedException(
+                    $"Velopack packaging not supported for {artifact.Rid}"
+                ),
             };
 
             await context

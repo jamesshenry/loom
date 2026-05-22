@@ -1,16 +1,13 @@
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -48,16 +45,20 @@ public class NugetUploadModuleTests
     [Test]
     public async Task Configure_SkipsExecution_WhenNoNugetArtifactsDefined()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(withNugetArtifact: false);
         var mockDotNet = new Mock<IDotNet>();
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
-                services.AddModule(x => new FakePackModule(x.GetRequiredService<LoomContext>()) as PackModule);
+                services.AddModule(x =>
+                    new FakePackModule(x.GetRequiredService<LoomContext>()) as PackModule
+                );
                 services.AddModule<NugetUploadModule>();
-            });
+            }
+        );
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -71,17 +72,20 @@ public class NugetUploadModuleTests
     [Test]
     public async Task Configure_SkipsExecution_WhenNugetUploadDisabled()
     {
-        using var tempDir = new TempDirectory();
-        Directory.CreateDirectory(Path.Combine(tempDir, ".artifacts", "nuget"));
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(withNugetArtifact: true, enableNugetUpload: false);
         var mockDotNet = new Mock<IDotNet>();
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
-                services.AddModule(x => new FakePackModule(x.GetRequiredService<LoomContext>()) as PackModule);
+                services.AddModule(x =>
+                    new FakePackModule(x.GetRequiredService<LoomContext>()) as PackModule
+                );
                 services.AddModule<NugetUploadModule>();
-            });
+            }
+        );
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -97,15 +101,12 @@ public class NugetUploadModuleTests
     [Test]
     public async Task ExecuteAsync_PushesPackages_WhenConditionsAreMet()
     {
-        using var tempDir = new TempDirectory();
-        Directory.CreateDirectory(Path.Combine(tempDir, ".artifacts", "nuget"));
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(withNugetArtifact: true, enableNugetUpload: true);
 
         var capturedOptions = new List<DotNetNugetPushOptions>();
 
         var mockDotNet = new Mock<IDotNet>();
-
-
 
         var mockCommand = new Mock<ICommand>();
         var mockNuget = new Mock<DotNetNuget>(mockCommand.Object);
@@ -121,7 +122,7 @@ public class NugetUploadModuleTests
             .Callback<DotNetNugetPushOptions, CommandExecutionOptions, CancellationToken>(
                 (opts, _, _) => capturedOptions.Add(opts)
             )
-                .ReturnsAsync(TestHelpers.EmptyCommandResult());
+            .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
         mockDotNet.Setup(d => d.Nuget).Returns(mockNuget.Object);
 
@@ -131,13 +132,17 @@ public class NugetUploadModuleTests
         Environment.SetEnvironmentVariable("LOOM_IGNORE_LOCAL_CHECK", "true");
         try
         {
-            var builder = TestHelpers.CreateSilentPipelineBuilder(loomContext,
+            var builder = TestHelpers.CreateSilentPipelineBuilder(
+                loomContext,
                 services =>
                 {
                     services.AddSingleton(mockDotNet.Object);
-                    services.AddModule(x => new FakePackModule(x.GetRequiredService<LoomContext>()) as PackModule);
+                    services.AddModule(x =>
+                        new FakePackModule(x.GetRequiredService<LoomContext>()) as PackModule
+                    );
                     services.AddModule<NugetUploadModule>();
-                });
+                }
+            );
 
             var pipeline = await builder.BuildAsync();
             await pipeline.RunAsync();

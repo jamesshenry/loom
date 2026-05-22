@@ -1,13 +1,10 @@
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -23,18 +20,22 @@ public class PackModuleTests
     [Test]
     public async Task Configure_SkipsExecution_WhenNoNugetArtifactsDefined()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var mockDotNet = new Mock<IDotNet>();
-        var builder = TestHelpers.CreateSilentPipelineBuilder(_loomContext with
-        {
-            WorkingDirectory = tempDir,
-        }, services =>
-        {
-            services.AddSingleton(mockDotNet.Object);
-            services.AddModule<FakeBuildModule>();
-            services.AddModule<FakeMinVerModule>();
-            services.AddModule<PackModule>();
-        });
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            _loomContext with
+            {
+                WorkingDirectory = tempDir,
+            },
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<FakeBuildModule>();
+                services.AddModule<FakeMinVerModule>();
+                services.AddModule<PackModule>();
+            }
+        );
+        builder.AddMockFileSystem();
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -47,7 +48,7 @@ public class PackModuleTests
     [Test]
     public async Task ExecuteAsync_IteratesAndPacksAllNugetArtifacts_WithCorrectVersionFromMinVer()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var mockDotNet = new Mock<IDotNet>();
         var context = _loomContext with
         {
@@ -70,14 +71,7 @@ public class PackModuleTests
                 )
             )
             .Callback<DotNetPackOptions, CommandExecutionOptions, CancellationToken>(
-                (options, _, _) =>
-                {
-                    capturedOptions.Add(options);
-                    if (options.Output != null)
-                    {
-                        Directory.CreateDirectory(options.Output);
-                    }
-                }
+                (options, _, _) => capturedOptions.Add(options)
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
@@ -87,21 +81,20 @@ public class PackModuleTests
             Path.Combine(tempDir, ".artifacts", "nuget", "package2.1.2.3.nupkg"),
         ];
 
-        var mockProvider = new Mock<IFileSystemProvider>();
-        mockProvider
-            .Setup(p =>
-                p.EnumerateFiles(It.IsAny<string>(), "*", SearchOption.TopDirectoryOnly)
-            )
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            context,
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<FakeBuildModule>();
+                services.AddModule<FakeMinVerModule>();
+                services.AddModule<PackModule>();
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs
+            .Setup(p => p.EnumerateFiles(It.IsAny<string>(), "*", SearchOption.TopDirectoryOnly))
             .Returns(expectedFiles);
-
-        var builder = TestHelpers.CreateSilentPipelineBuilder(context, services =>
-        {
-            services.AddSingleton(mockDotNet.Object);
-            services.AddSingleton(mockProvider.Object);
-            services.AddModule<FakeBuildModule>();
-            services.AddModule<FakeMinVerModule>();
-            services.AddModule<PackModule>();
-        });
 
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
@@ -130,7 +123,7 @@ public class PackModuleTests
     [Test]
     public async Task ExecuteAsync_UsesPrefixVersion_WhenMatches()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var mockDotNet = new Mock<IDotNet>();
         var context = _loomContext with
         {
@@ -156,22 +149,24 @@ public class PackModuleTests
                 )
             )
             .Callback<DotNetPackOptions, CommandExecutionOptions, CancellationToken>(
-                (o, _, _) =>
-                {
-                    captured = o;
-                    if (o.Output != null)
-                        Directory.CreateDirectory(o.Output);
-                }
+                (o, _, _) => captured = o
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(context, services =>
-        {
-            services.AddSingleton(mockDotNet.Object);
-            services.AddModule<FakeBuildModule>();
-            services.AddModule<FakeMinVerModule>();
-            services.AddModule<PackModule>();
-        });
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            context,
+            services =>
+            {
+                services.AddSingleton(mockDotNet.Object);
+                services.AddModule<FakeBuildModule>();
+                services.AddModule<FakeMinVerModule>();
+                services.AddModule<PackModule>();
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs
+            .Setup(p => p.EnumerateFiles(It.IsAny<string>(), "*", SearchOption.TopDirectoryOnly))
+            .Returns([Path.Combine(tempDir, ".artifacts", "nuget", "prefixed.1.2.4.nupkg")]);
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 

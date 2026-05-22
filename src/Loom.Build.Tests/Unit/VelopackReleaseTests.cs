@@ -1,14 +1,10 @@
 using Loom.Modules;
 using Loom.Velopack;
 using Loom.Velopack.Options;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.FileSystem;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -72,7 +68,9 @@ public class VelopackReleaseTests
         var result = await summary.GetModule<VelopackReleaseModule>();
 
         await Assert.That(result.SkipDecisionOrDefault?.ShouldSkip).IsTrue();
-        await Assert.That(result.SkipDecisionOrDefault?.Reason).Contains("No compatible Velopack artifacts for this host.");
+        await Assert
+            .That(result.SkipDecisionOrDefault?.Reason)
+            .Contains("No compatible Velopack artifacts for this host.");
     }
 
     [Test]
@@ -94,14 +92,15 @@ public class VelopackReleaseTests
                 [artifactName] = expectedArtifact,
             },
             ResolvedArtifacts = new List<ResolvedArtifact>
-        {
-            new ResolvedArtifact(
-                Name: artifactName,
-                Settings: expectedArtifact,
-                Rid: "win-x64",
-                IsAot: false,
-                CanBuildOnHost: true)
-        }.AsReadOnly()
+            {
+                new ResolvedArtifact(
+                    Name: artifactName,
+                    Settings: expectedArtifact,
+                    Rid: "win-x64",
+                    IsAot: false,
+                    CanBuildOnHost: true
+                ),
+            }.AsReadOnly(),
         };
 
         var packDir = Path.Combine(WorkingDir, ArtifactsDir, "publish", artifactName, "win-x64");
@@ -109,7 +108,7 @@ public class VelopackReleaseTests
 
         var publishedArtifacts = new List<PublishedArtifact>
         {
-            new(artifactName, new Folder(packDir), "win-x64", ArtifactType.Velopack),
+            new(artifactName, packDir, "win-x64", ArtifactType.Velopack),
         };
 
         var mockVelopack = new Mock<IVelopackPack>();
@@ -132,6 +131,7 @@ public class VelopackReleaseTests
         builder.Services.AddModule<FakeMinVerModule>();
         builder.Services.AddModule(new FakePublishModule(loomContext, publishedArtifacts));
         builder.Services.AddModule<VelopackReleaseModule>();
+        builder.AddMockFileSystem();
 
         var summary = await (await builder.BuildAsync()).RunAsync();
         var moduleResult = await summary.GetModule<VelopackReleaseModule>();
@@ -153,35 +153,33 @@ public class VelopackReleaseTests
         var settings = new ArtifactSettings
         {
             Type = ArtifactType.Velopack,
-            Project = "app.csproj"
+            Project = "app.csproj",
         };
         var loomContext = defaultLoomContext with
         {
             Rid = "unknown-rid",
-            Artifacts = new Dictionary<string, ArtifactSettings>
-            {
-                [artifactName] = settings,
-            },
+            Artifacts = new Dictionary<string, ArtifactSettings> { [artifactName] = settings },
             ResolvedArtifacts = new List<ResolvedArtifact>
-        {
-            new ResolvedArtifact(
-                Name: artifactName,
-                Settings: settings,
-                Rid: "unknown-rid", // This will trigger the default switch case
-                IsAot: false,
-                CanBuildOnHost: true
-            )
-        }.AsReadOnly()
+            {
+                new ResolvedArtifact(
+                    Name: artifactName,
+                    Settings: settings,
+                    Rid: "unknown-rid", // This will trigger the default switch case
+                    IsAot: false,
+                    CanBuildOnHost: true
+                ),
+            }.AsReadOnly(),
         };
         var publishedArtifacts = new List<PublishedArtifact>
         {
-            new(artifactName, new Folder(Path.GetTempPath()), "unknown-rid", ArtifactType.Velopack),
+            new(artifactName, "/fake/workspace/publish", "unknown-rid", ArtifactType.Velopack),
         };
 
         var builder = CreateBuilder(loomContext);
         builder.Services.AddModule<FakeMinVerModule>();
         builder.Services.AddModule(new FakePublishModule(loomContext, publishedArtifacts));
         builder.Services.AddModule<VelopackReleaseModule>();
+        builder.AddMockFileSystem();
 
         var action = async () => await (await builder.BuildAsync()).RunAsync();
 

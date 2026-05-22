@@ -1,7 +1,6 @@
 using Loom.Config;
-
+using ModularPipelines.FileSystem;
 using ModularPipelines.GitHub.Extensions;
-
 using Octokit;
 
 namespace Loom.Modules;
@@ -42,6 +41,7 @@ public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>
         CancellationToken ct
     )
     {
+        var fs = context.GetService<IFileSystemProvider>();
         var velopackModule = await context.GetModule<VelopackReleaseModule>();
         var velopackArtifacts = velopackModule.ValueOrDefault ?? [];
 
@@ -91,8 +91,7 @@ public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>
 
             foreach (var artifactResult in versionGroup)
             {
-                var folder = context.Files.GetFolder(artifactResult.ReleaseDir);
-                if (!folder.Exists)
+                if (!fs.DirectoryExists(artifactResult.ReleaseDir))
                 {
                     context.Logger.LogWarning(
                         "Directory {Dir} does not exist, skipping.",
@@ -101,34 +100,48 @@ public class GitHubReleaseModule(LoomContext loomContext) : Module<List<Release>
                     continue;
                 }
 
-                var files = folder.GetFiles(f => true);
+                var files = fs.EnumerateFiles(
+                    artifactResult.ReleaseDir,
+                    "*",
+                    SearchOption.TopDirectoryOnly
+                );
 
-                var uploadTasks = files.Where(f => !f.Name.StartsWith("assets", StringComparison.OrdinalIgnoreCase))
-                .Select(async file =>
-                {
-                    var existingAsset = release.Assets.FirstOrDefault(a => a.Name.Equals(file, StringComparison.OrdinalIgnoreCase));
-                    if (existingAsset != null)
+                var uploadTasks = files
+                    .Where(filePath =>
+                        !Path.GetFileName(filePath)
+                            .StartsWith("assets", StringComparison.OrdinalIgnoreCase)
+                    )
+                    .Select(async file =>
                     {
-                        context.Logger.LogInformation(
-                            "Asset {FileName} already exists. Deleting prior asset...",
-                            file
+                        var fileName = Path.GetFileName(file);
+                        var existingAsset = release.Assets.FirstOrDefault(a =>
+                            a.Name.Equals(fileName, StringComparison.OrdinalIgnoreCase)
                         );
-                        await client.Repository.Release.DeleteAsset(owner, repo, existingAsset.Id);
-                    }
+                        if (existingAsset != null)
+                        {
+                            context.Logger.LogInformation(
+                                "Asset {FileName} already exists. Deleting prior asset...",
+                                fileName
+                            );
+                            await client.Repository.Release.DeleteAsset(
+                                owner,
+                                repo,
+                                existingAsset.Id
+                            );
+                        }
 
-                    context.Logger.LogInformation("Uploading asset {FileName}...", file);
+                        context.Logger.LogInformation("Uploading asset {FileName}...", fileName);
 
-                    await using var stream = file.GetStream();
-                    var assetUpload = new ReleaseAssetUpload
-                    {
-                        FileName = file,
-                        ContentType = "application/octet-stream",
-                        RawData = stream,
-                    };
+                        await using var stream = fs.OpenRead(file);
+                        var assetUpload = new ReleaseAssetUpload
+                        {
+                            FileName = fileName,
+                            ContentType = "application/octet-stream",
+                            RawData = stream,
+                        };
 
-                    await client.Repository.Release.UploadAsset(release, assetUpload, ct);
-
-                });
+                        await client.Repository.Release.UploadAsset(release, assetUpload, ct);
+                    });
 
                 await Task.WhenAll(uploadTasks);
 

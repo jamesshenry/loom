@@ -6,6 +6,7 @@ using ModularPipelines;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Extensions;
+using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
 using Moq;
@@ -17,9 +18,7 @@ public class TestModuleTests
     [Test]
     public async Task ExecuteAsync_CreatesTestResultsDirectory_And_RunsDotNetTest()
     {
-        var workingDirectory = new TempDirectory();
-
-        await WriteGlobalJsonAsync(workingDirectory, "Microsoft.Testing.Platform");
+        const string workingDirectory = "/fake/workspace";
 
         var mockDotNet = new Mock<IDotNet>();
         DotNetTestOptions? capturedOptions = null;
@@ -42,13 +41,19 @@ public class TestModuleTests
             )
             .ReturnsAsync((CommandResult)null!);
 
-        var summary = await RunTestModuleAsync(workingDirectory, mockDotNet.Object);
+        var (summary, mockFs) = await RunTestModuleAsync(
+            workingDirectory,
+            mockDotNet.Object,
+            globalJsonContent: """{ "test": { "runner": "Microsoft.Testing.Platform" } }"""
+        );
         var testModuleResult = await summary.GetModule<TestModule>();
         var resultData = testModuleResult.ValueOrDefault;
 
         await Assert.That(testModuleResult.IsSuccess).IsTrue();
-        await Assert.That(Directory.Exists(Path.Combine(workingDirectory, "TestResults"))).IsTrue();
         await Assert.That(resultData).IsNotNull();
+        await Assert
+            .That(resultData!.CoverageFilePath)
+            .IsEqualTo(Path.Combine(workingDirectory, "TestResults"));
         await Assert.That(capturedOptions).IsNotNull();
         await Assert.That(capturedExecutionOptions).IsNotNull();
         await Assert.That(capturedOptions!.Solution).IsEqualTo("test.sln");
@@ -56,6 +61,11 @@ public class TestModuleTests
         await Assert.That(capturedOptions.Arguments!).Contains("--coverage");
         await Assert.That(capturedOptions.Arguments!).Contains("xml");
         await Assert.That(capturedExecutionOptions!.WorkingDirectory).IsEqualTo(workingDirectory);
+
+        mockFs.Verify(
+            x => x.CreateDirectory(It.Is<string>(s => s.Contains("TestResults"))),
+            Times.Once
+        );
 
         mockDotNet.Verify(
             x =>
@@ -71,10 +81,7 @@ public class TestModuleTests
     [Test]
     public async Task ExecuteAsync_UsesExistingTestResultsDirectory()
     {
-        using var workingDirectory = new TempDirectory();
-
-        await WriteGlobalJsonAsync(workingDirectory, "Microsoft.Testing.Platform");
-        Directory.CreateDirectory(Path.Combine(workingDirectory, "TestResults"));
+        const string workingDirectory = "/fake/workspace";
 
         var mockDotNet = new Mock<IDotNet>();
         mockDotNet
@@ -87,10 +94,19 @@ public class TestModuleTests
             )
             .ReturnsAsync((CommandResult)null!);
 
-        var summary = await RunTestModuleAsync(workingDirectory, mockDotNet.Object);
+        var (summary, mockFs) = await RunTestModuleAsync(
+            workingDirectory,
+            mockDotNet.Object,
+            globalJsonContent: """{ "test": { "runner": "Microsoft.Testing.Platform" } }""",
+            testResultsDirectoryExists: true
+        );
         var testModuleResult = await summary.GetModule<TestModule>();
 
         await Assert.That(testModuleResult.IsSuccess).IsTrue();
+        mockFs.Verify(
+            x => x.CreateDirectory(It.Is<string>(s => s.Contains("TestResults"))),
+            Times.Never
+        );
 
         mockDotNet.Verify(
             x =>
@@ -122,12 +138,12 @@ public class TestModuleTests
     [Test]
     public async Task ExecuteAsync_Fails_WhenGlobalJsonMissing()
     {
-        var workingDirectory = new TempDirectory();
+        const string workingDirectory = "/fake/workspace";
 
         // No global.json written — module should fail and throw from pipeline
         var mockDotNet = new Mock<IDotNet>();
 
-        var summary = await RunTestModuleAsync(workingDirectory, mockDotNet.Object);
+        var (summary, _) = await RunTestModuleAsync(workingDirectory, mockDotNet.Object);
         var testModuleResult = await summary.GetModule<TestModule>();
 
         await Assert.That(testModuleResult.IsSkipped).IsTrue();
@@ -146,7 +162,6 @@ public class TestModuleTests
     [Test]
     public async Task ExecuteAsync_UsesReleaseConfigurationWhenSet()
     {
-        // 1. No more TempDirectory! Just use a fake path.
         var fakeWorkspace = "/fake/workspace";
 
         var mockDotNet = new Mock<IDotNet>();
@@ -204,9 +219,14 @@ public class TestModuleTests
         await Assert.That(testModuleResult.IsSuccess).IsTrue();
     }
 
-    private static async Task<PipelineSummary> RunTestModuleAsync(
+    private static async Task<(
+        PipelineSummary Summary,
+        Mock<IFileSystemProvider> FileSystem
+    )> RunTestModuleAsync(
         string workingDirectory,
-        IDotNet dotNet
+        IDotNet dotNet,
+        string? globalJsonContent = null,
+        bool testResultsDirectoryExists = false
     )
     {
         var settings = new LoomSettings
@@ -214,36 +234,41 @@ public class TestModuleTests
             Workspace = new WorkspaceSettings { Solution = "test.sln" },
         };
 
-        var builder = Pipeline.CreateBuilder();
-        builder.Services.AddSingleton(new LoomContext(settings, workingDirectory));
-        builder.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        builder.Services.AddSingleton(dotNet);
-        builder.Services.AddModule<TestModule>();
-        builder.Options.PrintLogo = false;
-        builder.Options.ShowProgressInConsole = false;
-        builder.Options.PrintResults = false;
-        builder.Options.PrintDependencyChains = false;
-        builder.Options.DefaultLoggingOptions = CommandLoggingOptions.Silent;
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, workingDirectory),
+            services =>
+            {
+                services.AddSingleton(dotNet);
+                services.AddModule<TestModule>();
+            }
+        );
+
+        var mockFs = builder.AddMockFileSystem();
+
+        if (globalJsonContent != null)
+        {
+            mockFs
+                .Setup(f => f.FileExists(It.Is<string>(s => s.EndsWith("global.json"))))
+                .Returns(true);
+            mockFs
+                .Setup(f =>
+                    f.ReadAllTextAsync(
+                        It.Is<string>(s => s.EndsWith("global.json")),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(globalJsonContent);
+        }
+
+        if (testResultsDirectoryExists)
+        {
+            mockFs
+                .Setup(f => f.DirectoryExists(It.Is<string>(s => s.EndsWith("TestResults"))))
+                .Returns(true);
+        }
 
         var pipeline = await builder.BuildAsync();
 
-        return await pipeline.RunAsync();
-    }
-
-    private static async Task WriteGlobalJsonAsync(string workingDirectory, string runner)
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(workingDirectory, "global.json"),
-            $$"""
-            {
-              "sdk": {
-                "version": "10.0.104"
-              },
-              "test": {
-                "runner": "{{runner}}"
-              }
-            }
-            """
-        );
+        return (await pipeline.RunAsync(), mockFs);
     }
 }
