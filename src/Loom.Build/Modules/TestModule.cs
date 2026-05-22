@@ -53,7 +53,7 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
         {
             fs.CreateDirectory(testResultsPath);
         }
-        fs.DeleteDirectory(testResultsPath, false);
+
         context.Logger.LogInformation("Running tests for {Solution}", buildContext.Solution);
 
         var result = await context
