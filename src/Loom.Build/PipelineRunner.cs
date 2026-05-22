@@ -30,10 +30,7 @@ public static class PipelineRunner
             context.Target,
             request.Fresh
         );
-        builder.Options.DefaultExecutionOptions = new CommandExecutionOptions()
-        {
-            ThrowOnNonZeroExitCode = false,
-        };
+
         builder.Options.ThrowOnPipelineFailure = false;
 
         var pipeline = await builder.BuildAsync();

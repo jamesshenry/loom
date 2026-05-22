@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using CliWrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ModularPipelines;
@@ -6,6 +7,7 @@ using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
 using Moq;
+using CommandResult = ModularPipelines.Models.CommandResult;
 
 namespace Loom.Build.Tests.Unit;
 

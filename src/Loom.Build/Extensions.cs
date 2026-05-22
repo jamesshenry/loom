@@ -91,7 +91,7 @@ public static class Extensions
             services.AddModule<CleanModule>();
             services.AddModule<BuildModule>();
             services.AddModule<GitHubReleaseModule>();
-
+            services.AddModule<ReportGeneratorModule>();
             return services;
         }
 

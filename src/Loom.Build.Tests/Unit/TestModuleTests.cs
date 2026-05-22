@@ -52,7 +52,7 @@ public class TestModuleTests
         await Assert.That(testModuleResult.IsSuccess).IsTrue();
         await Assert.That(resultData).IsNotNull();
         await Assert
-            .That(resultData!.CoverageFilePath)
+            .That(resultData!.Path)
             .IsEqualTo(Path.Combine(workingDirectory, "TestResults"));
         await Assert.That(capturedOptions).IsNotNull();
         await Assert.That(capturedExecutionOptions).IsNotNull();

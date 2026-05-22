@@ -4,7 +4,7 @@ using ModularPipelines.FileSystem;
 
 namespace Loom.Modules;
 
-public record TestResult(CommandResult? Result, string CoverageFilePath);
+public record TestResult(CommandResult? Result, string Path);
 
 [ModuleCategory("Test")]
 [DependsOn<BuildModule>(Optional = true)]
@@ -63,6 +63,7 @@ public class TestModule(LoomContext buildContext, IConfiguration configuration) 
                 {
                     Solution = buildContext.Solution,
                     Configuration = buildContext.Configuration,
+                    NoBuild = true,
                     Arguments =
                     [
                         "--coverage",
