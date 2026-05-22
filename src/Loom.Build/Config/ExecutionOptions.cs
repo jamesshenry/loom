@@ -24,8 +24,4 @@ public class GlobalSettings
     }
 }
 
-public record ExecutionRequest(
-    BuildTarget Target,
-    string? Rid = null,
-    bool Fresh = false
-);
+public record ExecutionRequest(BuildTarget Target, string? Rid = null, bool Fresh = false);

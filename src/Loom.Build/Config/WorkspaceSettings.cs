@@ -20,8 +20,10 @@ public class WorkspaceSettings
 
     [Description("Whether to create a GitHub release during a release.")]
     public bool? EnableGithubRelease { get; set; } = false;
+
     [Description("Maps to MinVer.DefaultPreReleaseIdentifiers")]
-    public string? DefaultPreReleaseIdentifiers { get; set; } = LoomContext.DefaultPreReleaseIdentifiers_Default;
+    public string? DefaultPreReleaseIdentifiers { get; set; } =
+        LoomContext.DefaultPreReleaseIdentifiers_Default;
 
     [Description("Whether to create velopack packages during a release.")]
     public bool? EnableVelopackRelease { get; set; } = false;

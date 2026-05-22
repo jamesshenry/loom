@@ -1,8 +1,6 @@
 using Loom.MinVer;
 using Loom.Modules;
-
 using ModularPipelines.Context;
-
 using File = ModularPipelines.FileSystem.File;
 
 namespace Loom.Build.Tests.Unit;
@@ -88,7 +86,9 @@ public class FakePackModule : PackModule
     protected override Task<PackResult?> ExecuteAsync(IModuleContext context, CancellationToken ct)
     {
         return Task.FromResult<PackResult?>(
-            new PackResult(new List<File> { new File("package1.nupkg"), new File("package2.nupkg") })
+            new PackResult(
+                new List<File> { new File("package1.nupkg"), new File("package2.nupkg") }
+            )
         );
     }
 }
