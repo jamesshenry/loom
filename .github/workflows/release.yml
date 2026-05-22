@@ -35,7 +35,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Run tests
-        run: dotnet loom Test
+        run: dotnet loom test
 
   release:
     name: Release Artifacts for ${{ matrix.rid }}
@@ -73,4 +73,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           Nuget__ApiKey: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet loom Release
+        run: dotnet loom release

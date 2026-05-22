@@ -1,14 +1,11 @@
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Models;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -118,16 +115,19 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task Configure_SkipsExecution_WhenNoToolsAreRequired()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(requiresMinVer: false, requiresVelopack: false);
         var mockDotNet = new Mock<IDotNet>();
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreToolsModule>();
-            });
+            }
+        );
+        builder.AddMockFileSystem();
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
         var result = await summary.GetModule<RestoreToolsModule>();
@@ -139,18 +139,21 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task ExecuteAsync_CreatesManifest_WhenManifestIsMissing()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
         var mockDotNet = new Mock<IDotNet>();
 
         SetupDotNetMocks(mockDotNet, out var newOptions, out _, out _);
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreToolsModule>();
-            });
+            }
+        );
+        builder.AddMockFileSystem();
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -162,21 +165,25 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task ExecuteAsync_DoesNotCreateManifest_WhenManifestExists()
     {
-        using var tempDir = new TempDirectory();
-        // Create a fake manifest
-        System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+        const string tempDir = "/fake/workspace";
 
         var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
         var mockDotNet = new Mock<IDotNet>();
 
         SetupDotNetMocks(mockDotNet, out var newOptions, out _, out _);
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreToolsModule>();
-            });
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs
+            .Setup(x => x.FileExists(It.Is<string>(s => s.Contains("dotnet-tools.json"))))
+            .Returns(true);
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -219,20 +226,25 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task ExecuteAsync_RestoresTools_AtEndOfExecution()
     {
-        using var tempDir = new TempDirectory();
-        System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+        const string tempDir = "/fake/workspace";
 
         var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
         var mockDotNet = new Mock<IDotNet>();
 
         SetupDotNetMocks(mockDotNet, out _, out var restoreOptions, out _);
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreToolsModule>();
-            });
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs
+            .Setup(x => x.FileExists(It.Is<string>(s => s.Contains("dotnet-tools.json"))))
+            .Returns(true);
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -242,20 +254,25 @@ public class RestoreToolsModuleTests
     [Test]
     public async Task ExecuteAsync_ReturnsRestoreToolsResult_WrappingCommandResult()
     {
-        using var tempDir = new TempDirectory();
-        System.IO.File.WriteAllText(Path.Combine(tempDir, "dotnet-tools.json"), "{}");
+        const string tempDir = "/fake/workspace";
 
         var settings = CreateSettings(requiresMinVer: true, requiresVelopack: false);
         var mockDotNet = new Mock<IDotNet>();
 
         SetupDotNetMocks(mockDotNet, out _, out _, out _);
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreToolsModule>();
-            });
+            }
+        );
+        var mockFs = builder.AddMockFileSystem();
+        mockFs
+            .Setup(x => x.FileExists(It.Is<string>(s => s.Contains("dotnet-tools.json"))))
+            .Returns(true);
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
         var result = await summary.GetModule<RestoreToolsModule>();

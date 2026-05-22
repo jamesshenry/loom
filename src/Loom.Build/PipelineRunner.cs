@@ -1,7 +1,6 @@
 using Loom.Config;
-
 using ModularPipelines;
-
+using ModularPipelines.Exceptions;
 using Spectre.Console;
 
 namespace Loom;
@@ -27,9 +26,15 @@ public static class PipelineRunner
         builder.Services.AddModules();
         builder.Options.PrintLogo = false;
         builder.Options.ShowProgressInConsole = true;
-        builder.Options.RunOnlyCategories = LoomConfig.GetPipelineCategories(context.Target, request.Fresh);
+        builder.Options.RunOnlyCategories = LoomConfig.GetPipelineCategories(
+            context.Target,
+            request.Fresh
+        );
+
+        builder.Options.ThrowOnPipelineFailure = false;
 
         var pipeline = await builder.BuildAsync();
+
         await pipeline.RunAsync(ct);
     }
 }

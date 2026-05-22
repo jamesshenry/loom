@@ -21,10 +21,7 @@ public class RestoreModule(LoomContext buildContext, IConfiguration configuratio
         var result = await context
             .DotNet()
             .Restore(
-                new DotNetRestoreOptions
-                {
-                    ProjectSolution = buildContext.Solution,
-                },
+                new DotNetRestoreOptions { ProjectSolution = buildContext.Solution },
                 executionOptions: new CommandExecutionOptions
                 {
                     WorkingDirectory = buildContext.WorkingDirectory,

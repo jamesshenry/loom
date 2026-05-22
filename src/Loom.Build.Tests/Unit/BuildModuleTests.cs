@@ -1,12 +1,11 @@
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
-
+using ModularPipelines;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
+using ModularPipelines.FileSystem;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -32,14 +31,12 @@ public class BuildModuleTests
     [Test]
     public async Task ExecuteAsync_PassesFixedArgumentsAndSolution()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
 
         var capturedOptions = new List<DotNetBuildOptions>();
         var capturedExecOptions = new List<CommandExecutionOptions>();
-
-
 
         mockDotNet
             .Setup(d =>
@@ -58,13 +55,15 @@ public class BuildModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -73,18 +72,17 @@ public class BuildModuleTests
         await Assert.That(capturedOptions[0].NoRestore).IsTrue();
 
         await Assert.That(capturedExecOptions).Count().IsEqualTo(1);
-        await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir.Path);
+        await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir);
     }
 
     [Test]
     public async Task ExecuteAsync_UsesReleaseConfiguration_WhenTargetIsPublishOrRelease()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(target: BuildTarget.Publish);
         var mockDotNet = new Mock<IDotNet>();
 
         var capturedOptions = new List<DotNetBuildOptions>();
-
 
         mockDotNet
             .Setup(d =>
@@ -102,13 +100,15 @@ public class BuildModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -118,12 +118,11 @@ public class BuildModuleTests
     [Test]
     public async Task ExecuteAsync_UsesDebugConfiguration_WhenTargetIsDefault()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings(); // Defaults to Build
         var mockDotNet = new Mock<IDotNet>();
 
         var capturedOptions = new List<DotNetBuildOptions>();
-
 
         mockDotNet
             .Setup(d =>
@@ -141,13 +140,15 @@ public class BuildModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -157,12 +158,10 @@ public class BuildModuleTests
     [Test]
     public async Task ExecuteAsync_PassesVersionProperties_FromMinVer()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
         DotNetBuildOptions? capturedOptions = null;
-
-
 
         mockDotNet
             .Setup(d =>
@@ -172,19 +171,23 @@ public class BuildModuleTests
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<DotNetBuildOptions, CommandExecutionOptions, CancellationToken>((opts, _, _) =>
-            {
-                capturedOptions = opts;
-            })
+            .Callback<DotNetBuildOptions, CommandExecutionOptions, CancellationToken>(
+                (opts, _, _) =>
+                {
+                    capturedOptions = opts;
+                }
+            )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<FakeBuildMinVerModule>();
                 services.AddModule<BuildModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 

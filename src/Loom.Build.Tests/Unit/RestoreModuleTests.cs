@@ -1,12 +1,9 @@
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.DotNet.Services;
 using ModularPipelines.Options;
-
 using Moq;
 
 namespace Loom.Build.Tests.Unit;
@@ -34,14 +31,12 @@ public class RestoreModuleTests
     [Test]
     public async Task ExecuteAsync_PassesCorrectOptionsToDotNetRestore()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
 
         var capturedOptions = new List<DotNetRestoreOptions>();
         var capturedExecOptions = new List<CommandExecutionOptions>();
-
-
 
         mockDotNet
             .Setup(d =>
@@ -60,12 +55,14 @@ public class RestoreModuleTests
             )
             .ReturnsAsync(TestHelpers.EmptyCommandResult());
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         await pipeline.RunAsync();
 
@@ -73,17 +70,16 @@ public class RestoreModuleTests
         await Assert.That(capturedOptions[0].ProjectSolution).IsEqualTo("test.sln");
 
         await Assert.That(capturedExecOptions).Count().IsEqualTo(1);
-        await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir.Path);
+        await Assert.That(capturedExecOptions[0].WorkingDirectory).IsEqualTo(tempDir);
     }
 
     [Test]
     public async Task ExecuteAsync_ReturnsRestoreResult_WrappingCommandResult()
     {
-        using var tempDir = new TempDirectory();
+        const string tempDir = "/fake/workspace";
         var settings = CreateSettings();
         var mockDotNet = new Mock<IDotNet>();
         var emptyCommandResult = TestHelpers.EmptyCommandResult();
-
 
         mockDotNet
             .Setup(d =>
@@ -95,12 +91,14 @@ public class RestoreModuleTests
             )
             .ReturnsAsync(emptyCommandResult);
 
-        var builder = TestHelpers.CreateSilentPipelineBuilder(new LoomContext(settings, tempDir),
+        var builder = TestHelpers.CreateSilentPipelineBuilder(
+            new LoomContext(settings, tempDir),
             services =>
             {
                 services.AddSingleton(mockDotNet.Object);
                 services.AddModule<RestoreModule>();
-            });
+            }
+        );
         var pipeline = await builder.BuildAsync();
         var summary = await pipeline.RunAsync();
         var moduleResult = await summary.GetModule<RestoreModule>();

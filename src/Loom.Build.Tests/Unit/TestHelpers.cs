@@ -1,9 +1,13 @@
+using System.Runtime.CompilerServices;
+using CliWrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 using ModularPipelines;
-using ModularPipelines.Options;
+using ModularPipelines.FileSystem;
 using ModularPipelines.Models;
+using ModularPipelines.Options;
+using Moq;
+using CommandResult = ModularPipelines.Models.CommandResult;
 
 namespace Loom.Build.Tests.Unit;
 
@@ -47,6 +51,63 @@ public static class TestHelpers
 
         return builder;
     }
+
+    public static Mock<IFileSystemProvider> AddMockFileSystem(this PipelineBuilder builder)
+    {
+        var mockProvider = new Mock<IFileSystemProvider>();
+
+        mockProvider
+            .Setup(p => p.ReadAllTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+        mockProvider
+            .Setup(p => p.ReadLinesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(EmptyAsyncEnumerable());
+        mockProvider
+            .Setup(p => p.ReadAllBytesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        mockProvider.Setup(p => p.OpenRead(It.IsAny<string>())).Returns(() => new MemoryStream());
+        mockProvider.Setup(p => p.Create(It.IsAny<string>())).Returns(() => new MemoryStream());
+        mockProvider
+            .Setup(p => p.Open(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+            .Returns(() => new MemoryStream());
+
+        mockProvider.Setup(p => p.FileExists(It.IsAny<string>())).Returns(false);
+        mockProvider.Setup(p => p.DirectoryExists(It.IsAny<string>())).Returns(false);
+        mockProvider
+            .Setup(p =>
+                p.EnumerateFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>())
+            )
+            .Returns([]);
+        mockProvider
+            .Setup(p =>
+                p.EnumerateDirectories(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<SearchOption>()
+                )
+            )
+            .Returns([]);
+
+        mockProvider.Setup(p => p.GetTempPath()).Returns(Path.GetTempPath());
+        mockProvider.Setup(p => p.GetRandomFileName()).Returns(Path.GetRandomFileName());
+        mockProvider.Setup(p => p.Combine(It.IsAny<string[]>())).Returns<string[]>(Path.Combine);
+        mockProvider
+            .Setup(p => p.GetRelativePath(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns<string, string>(Path.GetRelativePath);
+
+        builder.Services.AddSingleton(mockProvider.Object);
+        return mockProvider;
+    }
+
+#pragma warning disable CS1998
+    private static async IAsyncEnumerable<string> EmptyAsyncEnumerable(
+        [EnumeratorCancellation] CancellationToken ct = default
+    )
+    {
+        yield break;
+    }
+#pragma warning restore CS1998
 }
 
 public sealed class FakeTimeProvider : TimeProvider
@@ -72,27 +133,4 @@ public sealed class FakeTimeProvider : TimeProvider
     {
         return _utcNow;
     }
-}
-
-public sealed class TempDirectory : IDisposable
-{
-    public string Path { get; }
-
-    public TempDirectory()
-    {
-        Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
-        Directory.CreateDirectory(Path);
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(Path))
-        {
-            Directory.Delete(Path, true);
-        }
-    }
-
-    public static implicit operator string(TempDirectory d) => d.Path;
-
-    public override string ToString() => Path;
 }

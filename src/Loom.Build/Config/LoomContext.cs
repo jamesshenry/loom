@@ -2,8 +2,8 @@ namespace Loom.Config;
 
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
-
 using static Loom.Extensions;
+
 public record LoomContext
 {
     public LoomContext() { }
@@ -36,13 +36,15 @@ public record LoomContext
             || (settings.Workspace.EnableVelopackRelease ?? false);
         EnableNugetUpload = settings.Workspace.EnableNugetUpload ?? false;
         EnableGithubRelease = settings.Workspace.EnableGithubRelease ?? false;
-        DefaultPreReleaseIdentifiers = settings.Workspace.DefaultPreReleaseIdentifiers ?? DefaultPreReleaseIdentifiers_Default;
+        DefaultPreReleaseIdentifiers =
+            settings.Workspace.DefaultPreReleaseIdentifiers ?? DefaultPreReleaseIdentifiers_Default;
     }
 
     public string WorkingDirectory { get; init; } = string.Empty;
     public string Solution { get; init; } = string.Empty;
     public string ArtifactsDirectory { get; init; } = ".artifacts";
-    public string DefaultPreReleaseIdentifiers { get; init; } = DefaultPreReleaseIdentifiers_Default;
+    public string DefaultPreReleaseIdentifiers { get; init; } =
+        DefaultPreReleaseIdentifiers_Default;
     public const string DefaultPreReleaseIdentifiers_Default = "preview.0";
     public IReadOnlyList<string> CleanDirectories { get; init; } = ["dist"];
 
@@ -61,6 +63,4 @@ public record LoomContext
     public bool? EnableNugetUpload { get; init; }
     public bool EnableGithubRelease { get; init; } = false;
     public ReadOnlyCollection<ResolvedArtifact> ResolvedArtifacts { get; init; } = [];
-
-
 }

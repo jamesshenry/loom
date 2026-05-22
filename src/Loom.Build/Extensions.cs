@@ -1,8 +1,6 @@
 using System.Runtime.InteropServices;
-
 using Loom.Config;
 using Loom.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Loom;
@@ -60,8 +58,10 @@ public static class Extensions
                 var rid = art.Rid ?? settings.Global.Rid ?? GetDefaultRid();
 
                 var projectPath = Path.Combine(workingDirectory, art.Project);
-                bool isAot = File.Exists(projectPath) &&
-                             File.ReadAllText(projectPath).Contains("<PublishAot>true", StringComparison.OrdinalIgnoreCase);
+                bool isAot =
+                    File.Exists(projectPath)
+                    && File.ReadAllText(projectPath)
+                        .Contains("<PublishAot>true", StringComparison.OrdinalIgnoreCase);
 
                 bool canBuild = !isAot || IsNativeHostCompatible(rid);
 
@@ -70,7 +70,7 @@ public static class Extensions
 
             var context = new LoomContext(settings, workingDirectory)
             {
-                ResolvedArtifacts = resolved.AsReadOnly()
+                ResolvedArtifacts = resolved.AsReadOnly(),
             };
             services.AddSingleton(settings);
             services.AddSingleton(context);
@@ -91,9 +91,10 @@ public static class Extensions
             services.AddModule<CleanModule>();
             services.AddModule<BuildModule>();
             services.AddModule<GitHubReleaseModule>();
-
+            services.AddModule<ReportGeneratorModule>();
             return services;
         }
+
         public static bool IsNativeHostCompatible(string targetRid)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -107,6 +108,7 @@ public static class Extensions
 
             return false;
         }
+
         public static string GetDefaultRid()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -117,7 +119,6 @@ public static class Extensions
                     : "osx-x64";
             return "linux-x64";
         }
-
     }
 
     extension(IConfiguration configuration) { }
@@ -126,7 +127,8 @@ public static class Extensions
     {
         public bool IsPublishable()
         {
-            return artifact.Type == ArtifactType.Executable || artifact.Type == ArtifactType.Velopack;
+            return artifact.Type == ArtifactType.Executable
+                || artifact.Type == ArtifactType.Velopack;
         }
     }
 }

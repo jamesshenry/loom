@@ -5,7 +5,10 @@ namespace Loom.Modules;
 
 public static class PublishHelpers
 {
-    public static MinVerVersion ResolveVersion(ArtifactSettings artifact, MinVerResult? minVerResult)
+    public static MinVerVersion ResolveVersion(
+        ArtifactSettings artifact,
+        MinVerResult? minVerResult
+    )
     {
         if (!string.IsNullOrWhiteSpace(artifact.Version))
         {
@@ -19,11 +22,11 @@ public static class PublishHelpers
         minVerResult?.GetVersion(null) ?? MinVerVersion.V1;
 
     public static List<KeyValue> CreateVersionProperties(MinVerVersion version) =>
-    [
-        new("AssemblyVersion", version.AssemblyVersion),
-        new("FileVersion", version.FileVersion),
-        new("InformationalVersion", version.Version),
-        new("PackageVersion", version.PackageVersion),
-        new("Version", version.Version),
-    ];
+        [
+            new("AssemblyVersion", version.AssemblyVersion),
+            new("FileVersion", version.FileVersion),
+            new("InformationalVersion", version.Version),
+            new("PackageVersion", version.PackageVersion),
+            new("Version", version.Version),
+        ];
 }

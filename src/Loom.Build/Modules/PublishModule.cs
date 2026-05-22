@@ -1,12 +1,11 @@
 using Loom.Config;
-
 using ModularPipelines.FileSystem;
 
 namespace Loom.Modules;
 
 public record PublishedArtifact(
     string ArtifactName,
-    Folder PublishDirectory,
+    string PublishDirectory,
     string Rid,
     ArtifactType Type
 );
@@ -21,21 +20,23 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
 {
     private async Task<bool> IsAotEnabled(string projectPath, IModuleContext context)
     {
-        // Simple robust check: does the csproj text contain <PublishAot>true
-        // You can use context.Files to read it
-        var file = context.Files.GetFile(projectPath);
-        if (!file.Exists) return false;
+        var fs = context.GetService<IFileSystemProvider>();
+        if (!fs.FileExists(projectPath))
+            return false;
 
-        var content = await file.ReadAsync();
+        var content = await fs.ReadAllTextAsync(projectPath);
         return content.Contains("<PublishAot>true", StringComparison.OrdinalIgnoreCase);
     }
+
     protected override ModuleConfiguration Configure()
     {
         return ModuleConfiguration
             .Create()
             .WithSkipWhen(ctx =>
             {
-                return !buildContext.ResolvedArtifacts.Any(a => a.CanBuildOnHost && a.Settings.Type != ArtifactType.Nuget)
+                return !buildContext.ResolvedArtifacts.Any(a =>
+                    a.CanBuildOnHost && a.Settings.Type != ArtifactType.Nuget
+                )
                     ? SkipDecision.Skip("No compatible artifacts for this host.")
                     : SkipDecision.DoNotSkip;
             })
@@ -47,19 +48,23 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
         CancellationToken ct
     )
     {
+        var fs = context.GetService<IFileSystemProvider>();
         var minVerModule = await context.GetModule<MinVerModule>();
         var minVerResult = minVerModule.ValueOrDefault;
 
-        var publishableArtifacts = buildContext.ResolvedArtifacts
-            .Where(a => a.CanBuildOnHost && (a.Settings.Type == ArtifactType.Executable || a.Settings.Type == ArtifactType.Velopack));
-
+        var publishableArtifacts = buildContext.ResolvedArtifacts.Where(a =>
+            a.CanBuildOnHost
+            && (
+                a.Settings.Type == ArtifactType.Executable
+                || a.Settings.Type == ArtifactType.Velopack
+            )
+        );
 
         var results = new List<PublishedArtifact>();
 
         foreach (var artifact in publishableArtifacts)
         {
-
-            var publishDirPath = Path.Combine(
+            var publishDirPath = fs.Combine(
                 buildContext.WorkingDirectory,
                 buildContext.ArtifactsDirectory,
                 "publish",
@@ -67,15 +72,13 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
                 artifact.Rid
             );
 
-            var publishFolder = context.Files.GetFolder(publishDirPath);
-
-            if (publishFolder.Exists)
+            if (fs.DirectoryExists(publishDirPath))
             {
                 context.Logger.LogInformation(
                     "Cleaning existing publish directory: {Path}",
-                    publishFolder.Path
+                    publishDirPath
                 );
-                await publishFolder.DeleteAsync(ct);
+                fs.DeleteDirectory(publishDirPath, true);
             }
 
             context.Logger.LogInformation(
@@ -97,7 +100,7 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
                     {
                         ProjectSolution = artifact.Settings.Project,
                         Configuration = buildContext.Configuration,
-                        Output = publishFolder.Path,
+                        Output = publishDirPath,
                         Runtime = artifact.Rid,
                         Properties = versionProperties,
                     },
@@ -111,7 +114,7 @@ public class PublishModule(LoomContext buildContext) : Module<PublishResult>
             results.Add(
                 new PublishedArtifact(
                     ArtifactName: artifact.Name,
-                    PublishDirectory: publishFolder,
+                    PublishDirectory: publishDirPath,
                     Rid: artifact.Rid,
                     Type: artifact.Settings.Type
                 )

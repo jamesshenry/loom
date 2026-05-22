@@ -36,7 +36,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Run Loom Test Pipeline
-        run: dotnet loom Test
+        run: dotnet loom test
 
       - name: Upload test results
         if: always()

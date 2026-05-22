@@ -1,4 +1,5 @@
 using Loom.Config;
+using ModularPipelines.FileSystem;
 
 namespace Loom.Modules;
 
@@ -29,10 +30,11 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
         CancellationToken ct
     )
     {
-        var rootManifest = Path.Combine(_loom.WorkingDirectory, "dotnet-tools.json");
-        var configManifest = Path.Combine(_loom.WorkingDirectory, ".config", "dotnet-tools.json");
+        var fs = context.GetService<IFileSystemProvider>();
+        var rootManifest = fs.Combine(_loom.WorkingDirectory, "dotnet-tools.json");
+        var configManifest = fs.Combine(_loom.WorkingDirectory, ".config", "dotnet-tools.json");
 
-        var manifestExists = File.Exists(rootManifest) || File.Exists(configManifest);
+        var manifestExists = fs.FileExists(rootManifest) || fs.FileExists(configManifest);
 
         if (!manifestExists)
         {
