@@ -121,14 +121,12 @@
       "x-enumNames": [
         "Nuget",
         "Executable",
-        "Velopack",
-        "Test"
+        "Velopack"
       ],
       "enum": [
         "Nuget",
         "Executable",
-        "Velopack",
-        "Test"
+        "Velopack"
       ]
     },
     "GlobalSettings": {
