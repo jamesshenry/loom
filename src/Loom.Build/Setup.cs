@@ -246,12 +246,12 @@ dotnet tool restore
 
 Required tools and dependent Loom modules:
 
-| Tool Command | Tool Package | Dependent Module(s) |
-| --- | --- | --- |
-| `loom` | `loom.build` | CLI entry point used to run all targets/modules |
-| `minver` | `minver-cli` | `MinVerModule` |
-| `vpk` | `vpk` | `VelopackReleaseModule` |
-| `reportgenerator` | `dotnet-reportgenerator-globaltool` | `ReportGeneratorModule` |
+| Tool Command      | Version  | Tool Package                        | Dependent Module(s)                             |
+| ----------------- | -------- | ----------------------------------- | ----------------------------------------------- |
+| `loom`            | >= 0.6.x | `loom.build`                        | CLI entry point used to run all targets/modules |
+| `minver`          | >=7.0.0  | `minver-cli`                        | `MinVerModule`                                  |
+| `vpk`             | >= 1.2.0 | `vpk`                               | `VelopackReleaseModule`                         |
+| `reportgenerator` | >=5.5.10 | `dotnet-reportgenerator-globaltool` | `ReportGeneratorModule`                         |
 
 ## Setup
 
@@ -293,7 +293,7 @@ Also configure required GitHub secrets:
 
 See release workflow setup in [.github/workflows/release.yml](../.github/workflows/release.yml).
 
-""";
+""".ReplaceLineEndings();
 
         await File.WriteAllTextAsync(instructionsMd, content);
         AnsiConsole.MarkupLine("[green]instructions.md updated in .build[/]");

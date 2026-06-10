@@ -61,7 +61,7 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
         if (_loom.EnableVelopack)
         {
             context.Logger.LogInformation(
-                "Velopack is required. Please run 'dotnet tool install vpk --version 0.0.1535-gb21da2a' and commit dotnet-tools.json."
+                "Velopack is required. Please run 'dotnet tool install vpk' and commit dotnet-tools.json."
             );
         }
 
