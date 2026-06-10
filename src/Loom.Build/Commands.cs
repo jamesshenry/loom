@@ -94,6 +94,7 @@ public class Commands
             await Setup.InitializeWorkspace(selectedSln, selectedProj, force);
             await Setup.InitializeWorkflows(force);
             await Setup.InitializeDependabot(force);
+            await Setup.InitializeInstructionsMd();
         }
         catch (Exception ex)
         {
