@@ -38,7 +38,7 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
 
         if (!manifestExists)
         {
-            context.Logger.LogInformation("No dotnet tool manifest found. Creating one...");
+            context.Logger.LogError("No dotnet tool manifest found. Creating one...");
             await context
                 .DotNet()
                 .New.Execute(
@@ -53,14 +53,14 @@ public class RestoreToolsModule : Module<RestoreToolsResult>
 
         if (_loom.RequiresMinVer)
         {
-            context.Logger.LogInformation(
+            context.Logger.LogError(
                 "MinVer is required. Please run 'dotnet tool install minver-cli' and commit dotnet-tools.json."
             );
         }
 
         if (_loom.EnableVelopack)
         {
-            context.Logger.LogInformation(
+            context.Logger.LogError(
                 "Velopack is required. Please run 'dotnet tool install vpk' and commit dotnet-tools.json."
             );
         }
